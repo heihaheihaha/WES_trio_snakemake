@@ -26,6 +26,17 @@ else:
 
 rule end:
 	input:
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}_fastqc.html",
+		f"{config['output_dir']}/Result.xls",
+		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
+		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
+
+
+
+
 
 # ====================== fastp ======================
 rule FUO_fastp:
@@ -33,16 +44,16 @@ rule FUO_fastp:
 		f"{config['FUO_R1_path']}",
 		f"{config['FUO_R2_path']}"
 	output:
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}_fastp.html",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}_fastp.json"
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz",
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.html",
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.json"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
 		f"""fastp -i {config['FUO_R1_path']} -I {config['FUO_R2_path']} \\
-		-o {config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz \\
-		-h {config['output_dir']}/fastp/{config['FUO_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['FUO_sample_name']}_fastp.json"""
+		-o {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz \\
+		-h {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.json"""
 
 rule MU0_fastp:
 	input:
@@ -79,15 +90,15 @@ rule Child_fastp:
 # ====================== fastQC ======================
 rule FUO_fastQC:
 	input:
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz"
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz"
 	output:
-		f"{config['output_dir']}/fastqc/{config['FUO_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['FUO_sample_name']}_fastqc.zip"
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.zip"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
-		f"""fastqc {config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz \\
+		f"""fastqc {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz \\
 		-o {config['output_dir']}/fastqc/"""
 
 rule MU0_fastQC:
@@ -125,15 +136,15 @@ rule FUO_align_readers:
 		f"{config['reference_panel_path']}.sa",
 		f"{config['reference_panel_path']}.amb",
 		f"{config['reference_panel_path']}",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz",
-		f"{config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz"
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
+		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam"
 	conda:
 		"./first_step_mamba.yml"
 	threads: 16
 	shell:
-		f"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['FUO_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FUO_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
+		f"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
 
 rule MU0_align_readers:
 	input:
@@ -173,18 +184,18 @@ rule Child_align_readers:
 # ====================== AddOrReplaceReadGroups ======================
 rule FUO_AddOrReplaceReadGroups: # Provide information for BQSR
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.rg.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam"
 	shell:
 		f"""{gatk} AddOrReplaceReadGroups \\
-			I={config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.bam \\
-			O={config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.rg.bam \\
-			RGID={config['FUO_sample_name']} \\
+			I={config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam \\
+			O={config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam \\
+			RGID={config['FU0_sample_name']} \\
 			RGLB=lib1 \\
 			RGPL={config['platform']} \\
 			RGPU={config['lane']} \\
-			RGSM={config['FUO_sample_name']} \\
+			RGSM={config['FU0_sample_name']} \\
 			CREATE_INDEX=True
 """
 
@@ -225,15 +236,15 @@ rule Child_AddOrReplaceReadGroups:
 # ====================== MarkDuplicatesSpark ======================
 rule FUO_mark_duplicates: # Notice MarkDuplicatesSpark is not BETA
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.rg.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam",
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.metrics"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.metrics"
 	shell:
 		f"""{gatk} MarkDuplicatesSpark \\ 
-			-I {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam \\
-			-M {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.metrics \\
+			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam \\
+			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
+			-M {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.metrics \\
 			--create-output-bam-index true
 """ # sambamba markdup will mark the duplicates in the bam file
 
@@ -283,13 +294,13 @@ rule Child_MarkDuplicatesSpark:
 # ====================== Index MarkDuplicates' BAM ======================
 rule FUO_mark_duplicates_index_bam:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.bai"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.bai"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
-		f"samtools index {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam" 
+		f"samtools index {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam" 
 
 rule MU0_MarkDuplicates_index_bam:
 	input:
@@ -315,19 +326,19 @@ rule Child_MarkDuplicates_index_bam:
 # ====================== BaseRecalibrator ======================
 rule FUO_BaseRecalibrator:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam",
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.bai",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.bai",
 		f"{config['reference_panel_path']}",
 		f"{config['reference_panel_path']}.fai",
 		f"{config['known_sites']}",
 		f"{config['known_sites']}.tbi"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"
 	shell:
 		f"""{gatk} BaseRecalibrator \\
 			-R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table \\
+			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
+			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table \\
 			--use-original-qualities \\
 			--known-sites {config['known_sites']} \\
 			--known-sites {config['known_sites2']}""" # known-sites2 -> indel
@@ -371,14 +382,14 @@ rule Child_BaseRecalibrator:
 
 rule FUO_ApplyBQSR:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	shell:
 		f"""{gatk} ApplyBQSRSpark -R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam \\
-			--bqsr-recal-file {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table"""
+			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
+			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
+			--bqsr-recal-file {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"""
 
 rule MU0_ApplyBQSR:
 	input:	
@@ -404,13 +415,13 @@ rule Child_ApplyBQSR:
 # ====================== Index BQSR BAM ======================
 rule FUO_ApplyBQSR_index_bam:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.bai"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.bai"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
-		f"samtools index {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam" # gatk build bam index will create the index file for the bam file
+		f"samtools index {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam" # gatk build bam index will create the index file for the bam file
 
 rule MU0_ApplyBQSR_index_bam:
 	input:
@@ -435,33 +446,33 @@ rule Child_ApplyBQSR_index_bam:
 # ====================== AnalyzeCovariates ======================
 rule FUO_BaseRecalibrator2:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.bai",
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.bai",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam",
 		f"{config['reference_panel_path']}",
 		f"{config['known_sites']}",
 		f"{config['known_sites']}.tbi"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table"
 	shell:
 		f"""{gatk} BaseRecalibrator \\
 			-R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam \\
-			-O {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
+			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
+			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
 			--known-sites {config['known_sites']}"""
 
 rule FU0_AnalyzeCovariates:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table",
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"
 	output:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
 	conda:
 		"./gatk_R_plot.yml"
 	shell:
 		f"""{gatk} AnalyzeCovariates \\
-			-before {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam.table \\
-			-after {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
-			-plots {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"""
+			-before {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table \\
+			-after {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
+			-plots {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"""
 
 rule MU0_BaseRecalibrator2:
 	input:
@@ -526,17 +537,17 @@ rule Child_AnalyzeCovariates:
 # ====================== HaplotypeCaller ======================
 rule FU0_HaplotypeCaller:
 	input:
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam",
-		f"{config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam.bai",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam",
+		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.bai",
 		f"{config['reference_panel_path']}"
 	output:
-		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz"
+		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz"
 	shell:
 		f"""{gatk} HaplotypeCaller \\
 			-R {config['reference_panel_path']} \\
 			--emit-ref-confidence GVCF \\
-			-I {config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bqsr.bam \\
-			-O {config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz \\
+			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
+			-O {config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz \\
 			-D {config['known_sites']} \\
 			-ip 50 \\
 			-L {config['bed_path']}
@@ -581,15 +592,15 @@ rule Child_HaplotypeCaller:
 # ====================== GenotypeGVCFs ======================
 rule FU0_GenotypeGVCFs:
 	input:
-		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz",
+		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz",
 		f"{config['reference_panel_path']}"
 	output:
-		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz"
+		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz"
 	shell:
 		f"""{gatk} GenotypeGVCFs \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz \\
-			-O {config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz"""
+			-V {config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz \\
+			-O {config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz"""
 
 rule MU0_GenotypeGVCFs:
 	input:
@@ -618,7 +629,7 @@ rule Child_GenotypeGVCFs:
 # ====================== CombineGVCFs ======================
 rule CombineGVCFs:
 	input:
-		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz",
+		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz",
 		f"{config['output_dir']}/variants/{config['MU0_sample_name']}.g.vcf.gz",
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.g.vcf.gz",
 		f"{config['reference_panel_path']}",
@@ -628,7 +639,7 @@ rule CombineGVCFs:
 	shell:
 		f"""{gatk} CombineGVCFs \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['FUO_sample_name']}.g.vcf.gz \\
+			-V {config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz \\
 			-V {config['output_dir']}/variants/{config['MU0_sample_name']}.g.vcf.gz \\
 			-V {config['output_dir']}/variants/{config['CHILD_sample_name']}.g.vcf.gz \\
 			-O {config['output_dir']}/variants/Trio.g.vcf.gz \\
@@ -772,7 +783,7 @@ rule Combine_snp_indel_annovar:
 rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[2]/$Father/$Father.vcf.gz -mv=$dir[2]/$Mother/$Mother.vcf.gz -cb=$dir[1]/$Proband/$Proband.sort.marked.bam -fb=$dir[1]/$Father/$Father.sort.marked.bam -mb=$dir[1]/$Mother/$Mother.sort.marked.bam -g=$ref_fa -sm=$snp_model -im=$ins_model -dm=$del_model -o=$Proband",".DNMs_predictions.csv
 
 	input:
-		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz",
+		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz",
 		f"{config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz",
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz",
 		f"{config['DenovoCNN_path']}"
@@ -784,10 +795,10 @@ rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[
 		f"""bash {config['DenovoCNN_path']} \\
 			-w={config['output_dir']}/variants/{config['CHILD_sample_name']} \\
 			-cv={config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz \\
-			-fv={config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz \\
+			-fv={config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz \\
 			-mv={config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz \\
 			-cb={config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam \\
-			-fb={config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam \\
+			-fb={config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
 			-mb={config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam \\
 			-g={config['reference_panel_path']} \\
 			-sm={config['snp_model']} \\
