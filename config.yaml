@@ -9,7 +9,7 @@ CHILD_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/221
 CHILD_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
 
 # OUT DIR
-output_dir: "/data/wangty/test_diff_temp"
+output_dir: "/data/wangty/tmp/trio_WES"
 
 # PARAMETER
 reference_panel_name: "hg38"
@@ -42,8 +42,8 @@ known_sites2: "/data/wangty/WES_pipeline_V2.2/database/hg38/dbsnp/Mills_and_1000
 HPO: "/data/wangty/WES_pipeline_V2.2/database/HPO/HPO_database.txt"
 GENEMODEL: "/data/wangty/WES_pipeline_V2.2/database/OMIM.20210712/gm.txt"
 TRANSCRIPT: "/data/wangty/WES_pipeline_V2.2/lib/canonical_transcript.txt"
-panel_PATH: "/data/wangty/WES_pipeline_V2.2/lib/gene_list/all.gene.txt"
-acmg78: "/data/wangty/WES_pipeline_V2.2/lib/ACMG78.list"
+panel_path: "/data/wangty/WES_pipeline_V2.2/lib/gene_list/all.gene.txt"
+acmg78_path: "/data/wangty/WES_pipeline_V2.2/lib/ACMG78.list"
 database_path: "/data/wangty/WES_pipeline_V2.2/database/hg38/annovar"
 
 # DenovoCNN model
@@ -57,10 +57,14 @@ FilterVar_path: "/data/wangty/WES_pipeline_V2.2/lib/FilterVar.pl"
 DenovoCNN_env: "/data/wangty/my_bin/DeNovoCNN-main/environment.yml"
 DenovoCNN_path: "/data/wangty/my_bin/DeNovoCNN-main/apply_denovocnn.sh"
 FilterDNMs_path: "/data/wangty/WES_pipeline_V2.2/lib/FilterDNMs.pl"
-
-progress_PATH: "/data/wangty/WES_pipeline_V2.2/lib/process.pl"
-ACMG_perl_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ACMG.pl"
-getVar2_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/getVar2.pl"
-get_result_perl_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/get_result.pl"
 ExtremeVar2_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ExtremeVar2.pl"
 ExtremeVar_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ExtremeVar.pl"
+process_trio_path: "/data/wangty/WES_pipeline_V2.2/lib/process_trio.pl"
+process_Trios_path: "/data/wangty/WES_pipeline_V2.2/lib/process_Trios.pl" # Attention, different from process_trio.pl
+ACMG_path: "/data/wangty/WES_pipeline_V2.2/lib/ACMG.pl"
+getTrioVar_path: "/data/wangty/WES_pipeline_V2.2/lib/getTrioVar.pl"
+get_result_path: "/data/wangty/WES_pipeline_V2.2/lib/get_result.pl"
+
+# Seem unnecessary but not sure
+progress_PATH: "/data/wangty/WES_pipeline_V2.2/lib/process.pl"
+getVar2_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/getVar2.pl"

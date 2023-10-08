@@ -13,14 +13,16 @@ def fa_dict(path0: str) -> str:
 
 ref_dict_path = fa_dict(ref_path0)
 
+Trio_ID = {config['CHILD_R1_path']}.split("/")[-1].split("_")[0]
+
 db = ""
 for i in config["category"].split("-"):
     db += f"-{i} Y "
 
 if ('ASD' in {config['panel_type']}):
-	getVar2_flag = 1
+	getTrioVar_flag = 1
 else:
-	getVar2_flag = 0
+	getTrioVar_flag = 0
 
 rule end:
 	input:
@@ -798,7 +800,7 @@ rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $P
 	input:
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv"
 	output:
-		
+		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt"
 	shell:
 		f"""perl {config['FilterDNMs_path']}
 			-in {config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv \\
@@ -806,6 +808,188 @@ rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $P
 			-p {config['DNMs_p']}
 			-c {config['DNMs_c']}
 		"""
+
+# ====================== ExtremeVar ======================
+rule ExtremeVar: # ExtremeVar -in $dir[2]/$Trio/$Trio.annovar -out $Trio.initial -Psoft $opt{Psoft} -maf $opt{MAFS} -reference $opt{ref} --extreme --extreme_all --remove -database $db_path  $db -TrioID $opt{TrioID}\n
+	input:
+		f"{config['ExtremeVar_PATH']}",
+		f"{config['output_dir']}/variants/Trio.annovar"
+	output:
+		f"{config['output_dir']}/variants/Trio.initial"
+	shell:
+		f"""perl {config['ExtremeVar_PATH']} \\
+		-in {config['output_dir']}/variants/Trio.annovar \\
+		-out {config['output_dir']}/variants/Trio.initial \\
+		-Psoft {config['Psoft']} \\
+		-maf {config['MAFS']} \\
+		-reference {config['reference_panel_name']} \\
+		--extreme \\
+		--extreme_all \\
+		--remove \\
+		-database {config['database_path']}  {db}
+		-TrioID {Trio_ID}
+		"""
+
+# ====================== ExtremeVar2 ======================
+rule ExtremeVar2:
+	input:
+		f"{config['ExtremeVar2_PATH']}",
+		f"{config['output_dir']}/variants/Trio.initial.extreme.xls",
+		f"{config['output_dir']}/variants/Trio.initial.hg38_multianno.txt"
+	output:
+		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+	shell:
+		f"""perl {config['ExtremeVar2_PATH']} \\
+		-out {config['output_dir']}/variants/Trio.initial \\
+		--extreme \\
+		--extreme_all \\
+		-MPsoft {config['MPsoft2']} \\
+		-reference {config['reference_panel_name']}
+		"""
+
+rule awk_select: # 		"awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1 {if(\$1~/Y/ || \$105~/pathogenic/ || \$105~/drug_response/ || (\$107~/DM/ && \$105 !~/benign/)) print \$0}' $Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > $Trio.initial.xls\n",
+	input:
+		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio.initial.xls"
+	shell:
+		r"""awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1 {if(\$1~/Y/ || \$105~/pathogenic/ || \$105~/drug_response/ || (\$107~/DM/ && \$105 !~/benign/)) print \$0}' {config['output_dir']}/variants/Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > {config['output_dir']}/variants/Trio.initial.xls"""
+
+# ====================== Process Trio ======================
+rule Process_Trios: # $process_trio -in $Trio.initial.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.extreme.xls
+	input:
+		f"{config['output_dir']}/variants/Trio.initial.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio.extreme.xls"
+	shell:
+		f"""perl {config['process_trio_path']} \\
+			-in {config['output_dir']}/variants/Trio.initial.xls \\
+			-TP {config['TRANSCRIPT']} \\
+			-Inheritance {config['GENEMODEL']} \\
+			-HPO {config['HPO']} \\
+			-TrioID {Trio_ID} \\
+			-out {config['output_dir']}/variants/Trio.extreme.xls
+		"""
+
+# ====================== Sample ACMG ======================
+# line 243
+rule ACMG: # $acmg -in $Trio.extreme.xls -out $Trio.prefinal.xls 
+	input:
+		f"{config['ACMG_path']}",
+		f"{config['output_dir']}/variants/Trio.extreme.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio.prefinal.xls"
+	shell:
+		f"""perl {config['ACMG_path']} \\
+			-in {config['output_dir']}/variants/Trio.extreme.xls \\
+			-out {config['output_dir']}/variants/Trio.prefinal.xls
+		"""
+# ====================== Get trio ======================
+rule get_Trio: # $getTrio $dir[2]/$Trio/$Proband",".preDNMs.txt $Trio.initial.tmp.xls $Trio.initial.Trios.extreme.xls | cut -f 1-11,13-27,31-34,38,42,46,52-54,56-61,65,70,80,86,89,94-95,98,101-112,116  > $Trio.initial.Trios.xls
+	input:
+		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt",
+		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio/Trio.initial.Trios.xls"
+	shell:
+		f"""perl {config['getTrio_path']} \\
+			{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
+			{config['output_dir']}/variants/Trio.initial.tmp.xls \\
+			{config['output_dir']}/variants/Trio.initial.Trios.extreme.xls | cut -f 1-11,13-27,31-34,38,42,46,52-54,56-61,65,70,80,86,89,94-95,98,101-112,116  > {config['output_dir']}/variants/Trio/Trio.initial.Trios.xls
+		"""
+
+# ====================== Another process Trios =====================
+rule process_Trios: # $process_Trios -in $Trio.initial.Trios.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.Trios.xls
+
+	input:
+		f"{config['output_dir']}/variants/Trio/Trio.initial.Trios.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio/Trio.Trios.xls"
+	shell:
+		f"""perl {config['process_Trios_path']} \\
+			-in {config['output_dir']}/variants/Trio/Trio.initial.Trios.xls \\
+			-TP {config['TRANSCRIPT']} \\
+			-Inheritance {config['GENEMODEL']} \\
+			-HPO {config['HPO']} \\
+			-TrioID {Trio_ID} \\
+			-out {config['output_dir']}/variants/Trio/Trio.Trios.xls
+		"""
+
+# ====================== Sample ACMG ======================
+rule ACMG2: # $acmg -in $Trio.Trios.xls -out $Trio.Trios.filter.xls
+	input:
+		f"{config['ACMG_path']}",
+		f"{config['output_dir']}/variants/Trio/Trio.Trios.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio.Trios.filter.xls"
+	shell:
+		f"""perl {config['ACMG_path']} \\
+			-in {config['output_dir']}/variants/Trio/Trio.Trios.xls \\
+			-out {config['output_dir']}/variants/Trio.Trios.filter.xls
+		"""
+
+# ====================== OUTPUT ALL ======================
+# """if($opt{type}=~/ASD/i){
+# 		print SH4 "$getTrioVar -in $Trio.prefinal.xls -list $panel_path -acmglist $acmg78 -DNMs $Trio.Trios.filter.xls -o1 $Trio.clinvar_HGMD.xls -o2 $Trio.loose.xls -o3 $Trio.strict.xls -o4 $Trio.final.xls\n";
+# 	}else{
+# 		print SH4 "$getTrioVar -in $Trio.prefinal.xls -acmglist $acmg78 -DNMs $Trio.Trios.filter.xls -o1 $Trio.clinvar_HGMD.xls -o2 $Trio.loose.xls -o3 $Trio.strict.xls $Trio.final.xls\n";
+# 	}
+# """
+rule getTrioVar:
+	input:
+		f"{config['getTrioVar_path']}",
+		f"{config['output_dir']}/variants/Trio.prefinal.xls"
+		f"{config['output_dir']}/variants/Trio.Trios.filter.xls"
+	output:
+		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
+		f"{config['output_dir']}/variants/Trio.loose.xls",
+		f"{config['output_dir']}/variants/Trio.strict.xls",
+		f"{config['output_dir']}/variants/Trio.final.xls"
+	shell:
+		f"""if [{getTrioVar_flag}]
+			then
+				perl {config['getTrioVar_path']} \\
+					-in {config['output_dir']}/variants/Trio.prefinal.xls \\
+					-list {config['panel_path']} \\
+					-acmglist {config['acmg78_path']} \\
+					-DNMs {config['output_dir']}/variants/Trio.Trios.filter.xls \\
+					-o1 {config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
+					-o2 {config['output_dir']}/variants/Trio.loose.xls \\
+					-o3 {config['output_dir']}/variants/Trio.strict.xls \\
+					-o4 {config['output_dir']}/variants/Trio.final.xls
+			else
+				perl {config['getTrioVar_path']} \\
+					-in {config['output_dir']}/variants/Trio.prefinal.xls \\
+					-acmglist {config['acmg78_path']} \\
+					-DNMs {config['output_dir']}/variants/Trio.Trios.filter.xls \\
+					-o1 {config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
+					-o2 {config['output_dir']}/variants/Trio.loose.xls \\
+					-o3 {config['output_dir']}/variants/Trio.strict.xls \\
+					{config['output_dir']}/variants/Trio.final.xls
+			fi
+		"""
+
+# ====================== Finally get result ======================
+rule get_result: # $result $dir[3]/$Trio.Trios.filter.xls $dir[3]/$Trio.strict.xls $dir[3]/$Trio.clinvar_HGMD.xls $dir[3]/$Trio.loose.xls $dir[3]/$Trio.final.xls $opt{outdir}/$Trio.stat.xls $Trio.result.xls
+	input:
+		f"{config['get_result_path']}"
+		f"{config['output_dir']}/variants/Trio.Trios.filter.xls",
+		f"{config['output_dir']}/variants/Trio.strict.xls",
+		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
+		f"{config['output_dir']}/variants/Trio.loose.xls",
+		f"{config['output_dir']}/variants/Trio.final.xls"
+	output:
+		f"{config['output_dir']}/Result.xls"
+	shell:
+		f"""perl {config['get_result_path']} \\
+			{config['output_dir']}/variants/Trio.Trios.filter.xls \\
+			{config['output_dir']}/variants/Trio.strict.xls \\
+			{config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
+			{config['output_dir']}/variants/Trio.loose.xls \\
+			{config['output_dir']}/variants/Trio.final.xls \\
+			{config['output_dir']}/Result.xls
+		"""
+
 
 # ====================== Prepare environment ====================== 
 rule index_reference:
@@ -850,322 +1034,4 @@ rule fasta_faidx:
 		f"samtools faidx {config['reference_panel_path']}"
 	# samtools faidx will create the index file for the fasta file
 
-#==============================================
-
-rule mark_duplicates:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.rg.bam"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam",
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.metrics"
-	shell:
-		f"""{gatk} MarkDuplicatesSpark \\
-			-I {config['output_dir']}/alignments/{config['sample_name']}.bwa.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam \\
-			-M {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.metrics""" # sambamba markdup will mark the dup3
-
-rule index_bam: 
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bai"
-	conda:
-		"./first_step_mamba.yml"
-	shell:
-		f"samtools index {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam" # gatk build bam index will create the index file for the bam file
-
-
-
-rule BaseRecalibrator:
-	input: 
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bai",
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam",
-		f"{config['reference_panel_path']}",
-		f"{config['reference_panel_path']}.fai",
-		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
-	output: 
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.table"
-	shell:
-		f"""{gatk} BaseRecalibratorSpark \\
-			-R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.table \\
-			--known-sites {config['known_sites']}""" 
-
-rule ApplyBQSR:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.table"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam"
-	shell:
-		f"""{gatk} ApplyBQSRSpark -R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam \\
-			-O {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam \\
-			--bqsr-recal-file {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.table"""
-
-rule index_bam2:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.bai"
-	conda:
-		"./first_step_mamba.yml"
-	shell:
-		f"samtools index {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam" # gatk build bam index will create the index file for the bam file
-
-rule BaseRecalibrator2:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.bai",
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam",
-		f"{config['reference_panel_path']}",
-		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table"
-	shell:
-		f"""{gatk} BaseRecalibratorSpark \\
-			-R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam \\
-			-O {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table \\
-			--known-sites {config['known_sites']}"""
-
-rule AnalyzeCovariates:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table"
-	output:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table.pdf"
-	conda:
-		"./gatk_R_plot.yml"
-	shell:
-		f"""{gatk} AnalyzeCovariates \\
-			-before {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.table \\
-			-after {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table \\
-			-plots {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.table.pdf"""
-
-
-rule HaplotypeCaller:
-	input:
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam",
-		f"{config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam.bai",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.g.vcf.gz"
-	shell:
-		f"""{gatk} HaplotypeCallerSpark \\
-			-R {config['reference_panel_path']} \\
-			-I {config['output_dir']}/alignments/{config['sample_name']}.bwa.markdup.rg.bam.bqsr.bam \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.g.vcf.gz \\
-			-ERC GVCF""" 
-# Notice: HaplotypeCaller GVCF 
-rule GenotypeGVCFs:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.g.vcf.gz",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.vcf.gz"
-	shell:
-		f"""{gatk} GenotypeGVCFs \\
-			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['sample_name']}.g.vcf.gz \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.vcf.gz"""
-
-rule selectvariants_snp:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.vcf.gz",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.vcf.gz"
-	shell:
-		f"""{gatk} SelectVariants \\
-			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['sample_name']}.vcf.gz \\
-			-select-type-to-include SNP \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.snp.vcf.gz"""
-
-rule VariantFiltration:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.vcf.gz",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.passed.vcf.gz"
-	shell:
-		f"""{gatk} VariantFiltration \\
-			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['sample_name']}.snp.vcf.gz \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.snp.passed.vcf.gz \\
-			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
-			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
-			--filter-expression 'FS>60.0' --filter-name 'HIGH_FS' \\
-			--filter-expression 'MQ<40.0' --filter-name 'LOW_MQ' \\
-			--filter-expression 'MQRankSum<-12.5' --filter-name 'LOW_MQRS' \\
-			--filter-expression 'ReadPosRankSum<-8.0' --filter-name 'LOW_RPRS' \\
-			--filter-expression 'SOR>3.0' --filter-name 'HIGH_SOR' 
-			"""
-			# --filter-expression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" \\
-
-### Variant Quality Score Recalibration (VQSR)? ###
-
-rule perl_filter:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.passed.vcf.gz"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.filtered.vcf.gz"
-	shell:
-		r"""perl -ne 'chomp;if($_=~/^#/ || $_ =~ /PASS/){{print "$_\n"}}'""" + f" {config['output_dir']}/variants/{config['sample_name']}.snp.passed.vcf.gz" + ">" + f"{config['output_dir']}/variants/{config['sample_name']}.snp.filtered.vcf.gz"
-
-rule FilterVar:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.filtered.vcf.gz"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.annovar"
-	shell:
-		f"""perl ./FilterVar.pl \\
-		-in {config['output_dir']}/variants/{config['sample_name']}.snp.filtered.vcf.gz \\
-		-out {config['output_dir']}/variants/{config['sample_name']}.snp.annovar \\
-		-minhet 0.20 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough"""
-	
-# filter indel
-rule selectvariants_indel:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.vcf.gz",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.vcf.gz"
-	shell:
-		f"""{gatk} SelectVariants \\
-			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['sample_name']}.vcf.gz \\
-			-select-type-to-include INDEL \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.indel.vcf.gz"""
-
-rule VariantFiltration_indel:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.vcf.gz",
-		f"{config['reference_panel_path']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.passed.vcf.gz"
-	shell:
-		f"""{gatk} VariantFiltration \\
-			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/{config['sample_name']}.indel.vcf.gz \\
-			-O {config['output_dir']}/variants/{config['sample_name']}.indel.passed.vcf.gz \\
-			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
-			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
-			--filter-expression 'FS>200.0' --filter-name 'HIGH_FS' \\
-			--filter-expression 'ReadPosRankSum<-20.0' --filter-name 'LOW_RPRS' \\
-			--filter-expression 'SOR>10.0' --filter-name 'HIGH_SOR' 
-			"""
-
-rule perl_filter_indel:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.passed.vcf.gz"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.filtered.vcf.gz"
-	shell:
-		r"""perl -ne 'chomp;if($_=~/^#/ || $_ =~ /PASS/){{print "$_\n"}}'""" + f" {config['output_dir']}/variants/{config['sample_name']}.indel.passed.vcf.gz" + ">" + f"{config['output_dir']}/variants/{config['sample_name']}.indel.filtered.vcf.gz"
-
-rule FilterVar_indel:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.filtered.vcf.gz"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.annovar"
-	shell:
-		f"""perl ./FilterVar.pl \\
-		-in {config['output_dir']}/variants/{config['sample_name']}.indel.filtered.vcf.gz \\
-		-out {config['output_dir']}/variants/{config['sample_name']}.indel.annovar \\
-		-minhet 0.30 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough"""
-
-rule CombineVariants:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.snp.annovar",
-		f"{config['output_dir']}/variants/{config['sample_name']}.indel.annovar"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.annovar"
-	shell:
-		f"""cat {config['output_dir']}/variants/{config['sample_name']}.snp.annovar {config['output_dir']}/variants/{config['sample_name']}.indel.annovar > {config['output_dir']}/variants/{config['sample_name']}.annovar"""
-
-rule ExtremeVar:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.annovar",
-		f"{config['ExtremeVar_PATH']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.extreme.xls",
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.hg38_multianno.txt"
-	shell:
-		# "$ExtremeVar -in $dir[2]/$id2name{$i}.annovar -out $id2name{$i}.initial -Psoft $opt{Psoft} -maf $opt{MAFS} -reference $opt{ref} --extreme --extreme_all --remove -database $db_path  $db\n",
-		f"""perl {config['ExtremeVar_PATH']} \\
-		-in {config['output_dir']}/variants/{config['sample_name']}.annovar \\
-		-out {config['output_dir']}/variants/{config['sample_name']}.initial \\
-		-Psoft {config['Psoft']} \\
-		-maf {config['MAFS']} \\
-		-reference {config['reference_panel_name']} \\
-		--extreme \\
-		--extreme_all \\
-		--remove \\
-		-database {config['database_path']}  {db}
-		"""
-
-#"$ExtremeVar2 -out $id2name{$i}.initial --extreme --extreme_all -MPsoft $opt{MPsoft2} -reference $opt{ref}"
-rule ExtremeVar2:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.extreme.xls",
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.hg38_multianno.txt",
-		f"{config['ExtremeVar2_PATH']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.tmp.xls"
-	shell:
-		f"""perl {config['ExtremeVar2_PATH']} \\
-		-out {config['output_dir']}/variants/{config['sample_name']}.initial \\
-		--extreme \\
-		--extreme_all \\
-		-MPsoft {config['MPsoft2']} \\
-		-reference {config['reference_panel_name']}
-		"""
-
-rule awk_select:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.tmp.xls"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.xls"
-	shell:
-		r"""awk -F \"\\t\" 'BEGIN{{IGNORECASE=1}} NR==1 {{print $0}} NR>1 {{if($1~/Y/ || $105~/pathogenic/ || $105~/drug_response/ || ($107~/DM/ && $105 !~/benign/)) print $0}}' """+f"""{config['output_dir']}/variants/{config['sample_name']}.initial.tmp.xls"""+" | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > "+f"{config['output_dir']}/variants/{config['sample_name']}.initial.xls"
-
-rule progress:
-	input:
-		f"{config['output_dir']}/variants/{config['sample_name']}.initial.xls",
-		f"{config['progress_PATH']}", # perl script
-		f"{config['TRANSCRIPT']}",
-		f"{config['GENEMODEL']}",
-		f"{config['HPO']}"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.extreme.xls"
-	shell:
-	# $process $id2name{$i}.initial.xls $transcript $gm $hpo > $id2name{$i}.extreme.xls
-		f"perl {config['progress_PATH']} {config['output_dir']}/variants/{config['sample_name']}.initial.xls {config['TRANSCRIPT']} {config['GENEMODEL']} {config['HPO']}>{config['output_dir']}/variants/{config['sample_name']}.extreme.xls"
-
-rule ACMG:
-	input:
-		f"{config['ACMG_perl_script_PATH']}",
-		f"{config['output_dir']}/variants/{config['sample_name']}.extreme.xls"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.prefinal.xls"
-	shell:
-		f"perl {config['ACMG_perl_script_PATH']} -in {config['output_dir']}/variants/{config['sample_name']}.extreme.xls -out {config['output_dir']}/variants/{config['sample_name']}.prefinal.xls"
-
-rule getVar2:
-	input:
-		f"{config['getVar2_script_PATH']}",
-		f"{config['output_dir']}/variants/{config['sample_name']}.prefinal.xls"
-	output:
-		f"{config['output_dir']}/variants/{config['sample_name']}.clinvar_HGMD.xls",
-		f"{config['output_dir']}/variants/{config['sample_name']}.loose.xls",
-		f"{config['output_dir']}/variants/{config['sample_name']}.strict.xls",
-		f"{config['output_dir']}/variants/{config['sample_name']}.final.xls"
-	shell:
-		f"""if [{getVar2_flag}]
-		then
-			{config['getVar2_script_PATH']} -in {config['output_dir']}/variants/{config['sample_name']}.prefinal.xls -list {config['panel_PATH']} -acmglist {config['acmg78']} -o1 {config['output_dir']}/variants/{config['sample_name']}.clinvar_HGMD.xls -o2 {config['output_dir']}/variants/{config['sample_name']}.loose.xls -o3 {config['output_dir']}/variants/{config['sample_name']}.strict.xls -o4 {config['output_dir']}/variants/{config['sample_name']}.final.xls
-		else
-			perl {config['getVar2_script_PATH']} -in {config['output_dir']}/variants/{config['sample_name']}.prefinal.xls -acmglist {config['acmg78']} -o1 {config['output_dir']}/variants/{config['sample_name']}.clinvar_HGMD.xls -o2 {config['output_dir']}/variants/{config['sample_name']}.loose.xls -o3 {config['output_dir']}/variants/{config['sample_name']}.strict.xls -o4 {config['output_dir']}/variants/{config['sample_name']}.final.xls
-		fi"""
+#==============================================================================================================
