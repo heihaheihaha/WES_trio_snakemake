@@ -1,2 +1,55 @@
-gatk_PATH: ""
+# DATA
+FUO_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
+FUO_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
 
+MUO_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
+MUO_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
+
+CHILD_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
+CHILD_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
+
+# OUT DIR
+output_dir: "/data/wangty/test_diff_temp"
+
+# PARAMETER
+reference_panel_name: "hg38"
+
+Psoft: "ReVe,gt,0.7:VEST3,gt,0.6:REVEL,gt,0.4:CADD,gt,20:GERP++,gt,2"
+MPsoft: 0.6
+MPsoft2: 0.1
+MAFS: "gnomAD_exome_ALL,0.001:gnomad312_AF,0.001:gnomAD_exome_EAS,0.001:gnomad312_AF_eas,0.001:ExAC_EAS,0.001:ExAC_ALL,0.001:esp6500siv2_all,0.001:1000g2015aug_eas,0.001:1000g2015aug_all,0.001"
+
+
+
+category: "genebased-hgmd-gene4denovo"
+
+panel_type: "ASD"
+
+# READ GROUP
+FU0_sample_name: "FU0"
+MU0_sample_name: "MU0"
+CHILD_sample_name: "CHILD"
+lane: "unit2"
+platform: "Illumina"
+
+# REF
+bed_path: "/data/wangty/WES_pipeline_V2.2/lib/Human_Exome_Panel-hg38.bed"
+reference_panel_path: "/data/wangty/my_ref/hg38.fa"
+known_sites: "/data/wangty/my_ref/dbsnp_138.hg38.vcf.gz"
+known_sites2: "/data/wangty/WES_pipeline_V2.2/database/hg38/dbsnp/Mills_and_1000G_gold_standard.indels.hg38.vcf" # ?????????
+
+HPO: "/data/wangty/WES_pipeline_V2.2/database/HPO/HPO_database.txt"
+GENEMODEL: "/data/wangty/WES_pipeline_V2.2/database/OMIM.20210712/gm.txt"
+TRANSCRIPT: "/data/wangty/WES_pipeline_V2.2/lib/canonical_transcript.txt"
+panel_PATH: "/data/wangty/WES_pipeline_V2.2/lib/gene_list/all.gene.txt"
+acmg78: "/data/wangty/WES_pipeline_V2.2/lib/ACMG78.list"
+database_path: "/data/wangty/WES_pipeline_V2.2/database/hg38/annovar"
+
+# BIN
+gatk_path: "/data/wangty/my_bin/gatk-4.4.0.0/gatk"
+progress_PATH: "/data/wangty/WES_pipeline_V2.2/lib/process.pl"
+ACMG_perl_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ACMG.pl"
+getVar2_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/getVar2.pl"
+get_result_perl_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/get_result.pl"
+ExtremeVar2_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ExtremeVar2.pl"
+ExtremeVar_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ExtremeVar.pl"
