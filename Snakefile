@@ -33,11 +33,7 @@ rule end:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
-
-
-
-
-
+		
 # ====================== fastp ======================
 rule FUO_fastp:
 	input:
