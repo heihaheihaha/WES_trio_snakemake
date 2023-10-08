@@ -1,13 +1,14 @@
 # DATA
-FUO_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
-FUO_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
+FU0_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
+FU0_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
 
-MUO_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
-MUO_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
+MU0_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
+MU0_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
 
 CHILD_R1_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R1.fq.gz"
 CHILD_R2_path: "/data/wangty/WES_pipeline_V2.2/example/2212B001/01.Cleandata/2212B001.R2.fq.gz"
 
+TRIO_ID: "2212B001"
 # OUT DIR
 output_dir: "/data/wangty/tmp/trio_WES"
 
@@ -47,9 +48,9 @@ acmg78_path: "/data/wangty/WES_pipeline_V2.2/lib/ACMG78.list"
 database_path: "/data/wangty/WES_pipeline_V2.2/database/hg38/annovar"
 
 # DenovoCNN model
-snp_model: "/data/wangty/my_bin/DeNovoCNN-main/models/snv.h5"
-indel_model: "/data/wangty/my_bin/DeNovoCNN-main/models/indel.h5"
-del_model: "/data/wangty/my_bin/DeNovoCNN-main/models/del.h5"
+snp_model: "/data/wangty/my_bin/DeNovoCNN-main/models/snp"
+ins_model: "/data/wangty/my_bin/DeNovoCNN-main/models/ins"
+del_model: "/data/wangty/my_bin/DeNovoCNN-main/models/del"
 
 # BIN
 gatk_path: "/data/wangty/my_bin/gatk-4.4.0.0/gatk"
@@ -63,6 +64,7 @@ process_trio_path: "/data/wangty/WES_pipeline_V2.2/lib/process_trio.pl"
 process_Trios_path: "/data/wangty/WES_pipeline_V2.2/lib/process_Trios.pl" # Attention, different from process_trio.pl
 ACMG_path: "/data/wangty/WES_pipeline_V2.2/lib/ACMG.pl"
 getTrioVar_path: "/data/wangty/WES_pipeline_V2.2/lib/getTrioVar.pl"
+getTrio_path: "/data/wangty/WES_pipeline_V2.2/lib/getTrio.pl"
 get_result_path: "/data/wangty/WES_pipeline_V2.2/lib/get_result.pl"
 
 # Seem unnecessary but not sure

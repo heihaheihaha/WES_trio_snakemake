@@ -13,7 +13,7 @@ def fa_dict(path0: str) -> str:
 
 ref_dict_path = fa_dict(ref_path0)
 
-Trio_ID = {config['CHILD_R1_path']}.split("/")[-1].split("_")[0]
+Trio_ID = f"{config['TRIO_ID']}"
 
 db = ""
 for i in config["category"].split("-"):
@@ -33,12 +33,12 @@ rule end:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
-		
+
 # ====================== fastp ======================
-rule FUO_fastp:
+rule FU0_fastp:
 	input:
-		f"{config['FUO_R1_path']}",
-		f"{config['FUO_R2_path']}"
+		f"{config['FU0_R1_path']}",
+		f"{config['FU0_R2_path']}"
 	output:
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz",
@@ -47,7 +47,7 @@ rule FUO_fastp:
 	conda:
 		"./first_step_mamba.yml"
 	shell:
-		f"""fastp -i {config['FUO_R1_path']} -I {config['FUO_R2_path']} \\
+		f"""fastp -i {config['FU0_R1_path']} -I {config['FU0_R2_path']} \\
 		-o {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz \\
 		-h {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.json"""
 
@@ -84,7 +84,7 @@ rule Child_fastp:
 		-h {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.json"""
 
 # ====================== fastQC ======================
-rule FUO_fastQC:
+rule FU0_fastQC:
 	input:
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz"
@@ -124,7 +124,7 @@ rule Child_fastQC:
 		-o {config['output_dir']}/fastqc/"""
 
 # ====================== BWA ======================
-rule FUO_align_readers:
+rule FU0_align_readers:
 	input:
 		f"{config['reference_panel_path']}.bwt",
 		f"{config['reference_panel_path']}.pac",
@@ -140,7 +140,7 @@ rule FUO_align_readers:
 		"./first_step_mamba.yml"
 	threads: 16
 	shell:
-		f"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
+		"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
 
 rule MU0_align_readers:
 	input:
@@ -158,7 +158,7 @@ rule MU0_align_readers:
 		"./first_step_mamba.yml"
 	threads: 16
 	shell:
-		f"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['MU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['MU0_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
+		"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['MU0_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['MU0_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
 
 rule Child_align_readers:
 	input:
@@ -176,9 +176,9 @@ rule Child_align_readers:
 		"./first_step_mamba.yml"
 	threads: 16
 	shell:
-		f"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
+		"bwa mem -t {threads}" + f" {config['reference_panel_path']} {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R1.fastp.gz {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R2.fastp.gz | samtools sort > {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.bam" # bwa mem will align the reads to the reference panel
 # ====================== AddOrReplaceReadGroups ======================
-rule FUO_AddOrReplaceReadGroups: # Provide information for BQSR
+rule FU0_AddOrReplaceReadGroups: # Provide information for BQSR
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.bam"
 	output:
@@ -230,7 +230,7 @@ rule Child_AddOrReplaceReadGroups:
 """
 
 # ====================== MarkDuplicatesSpark ======================
-rule FUO_mark_duplicates: # Notice MarkDuplicatesSpark is not BETA
+rule FU0_mark_duplicates: # Notice MarkDuplicatesSpark is not BETA
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam"
 	output:
@@ -288,7 +288,7 @@ rule Child_MarkDuplicatesSpark:
 
 
 # ====================== Index MarkDuplicates' BAM ======================
-rule FUO_mark_duplicates_index_bam:
+rule FU0_mark_duplicates_index_bam:
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam"
 	output:
@@ -320,7 +320,7 @@ rule Child_MarkDuplicates_index_bam:
 
 ## =========================== BQSR ============================
 # ====================== BaseRecalibrator ======================
-rule FUO_BaseRecalibrator:
+rule FU0_BaseRecalibrator:
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.bai",
@@ -376,7 +376,7 @@ rule Child_BaseRecalibrator:
 			--known-sites {config['known_sites']}"""
 # ====================== ApplyBQSR ======================
 
-rule FUO_ApplyBQSR:
+rule FU0_ApplyBQSR:
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"
 	output:
@@ -409,7 +409,7 @@ rule Child_ApplyBQSR:
 			-O {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			--bqsr-recal-file {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam.table"""
 # ====================== Index BQSR BAM ======================
-rule FUO_ApplyBQSR_index_bam:
+rule FU0_ApplyBQSR_index_bam:
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	output:
@@ -440,7 +440,7 @@ rule Child_ApplyBQSR_index_bam:
 		f"samtools index {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam" # gatk build bam index will create the index file for the bam file
 
 # ====================== AnalyzeCovariates ======================
-rule FUO_BaseRecalibrator2:
+rule FU0_BaseRecalibrator2:
 	input:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.bai",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam",
@@ -724,13 +724,12 @@ rule Indel_VariantFiltration: # --filter-expression 'QUAL<30.0' --filter-name 'L
 
 # ====================== Get filtered ======================
 rule get_filtered_snp_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.snp.pass.vcf > $Trio.snp.filter.vcf\n",
-
 	input:
 		f"{config['output_dir']}/variants/Trio.snp.pass.vcf"
 	output:
 		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
 	shell:
-		f"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print "\$_\\n"}' {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"""
+		r"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){{print "\$_\\n"}}'"""+f""" {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"""
 
 rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.indel.pass.vcf > $Trio.indel.filter.vcf\n"
 	input:
@@ -738,7 +737,7 @@ rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$
 	output:
 		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
 	shell:
-		f"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print "\$_\\n"}' {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"""
+		r"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){{print "\$_\\n"}}'"""+f""" {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"""
 
 # ====================== FilterVar ======================
 rule SNP_FilterVar:
@@ -777,7 +776,6 @@ rule Combine_snp_indel_annovar:
 
 # ====================== Find denovo mutation in Trio ======================
 rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[2]/$Father/$Father.vcf.gz -mv=$dir[2]/$Mother/$Mother.vcf.gz -cb=$dir[1]/$Proband/$Proband.sort.marked.bam -fb=$dir[1]/$Father/$Father.sort.marked.bam -mb=$dir[1]/$Mother/$Mother.sort.marked.bam -g=$ref_fa -sm=$snp_model -im=$ins_model -dm=$del_model -o=$Proband",".DNMs_predictions.csv
-
 	input:
 		f"{config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz",
 		f"{config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz",
@@ -822,7 +820,8 @@ rule ExtremeVar: # ExtremeVar -in $dir[2]/$Trio/$Trio.annovar -out $Trio.initial
 		f"{config['ExtremeVar_PATH']}",
 		f"{config['output_dir']}/variants/Trio.annovar"
 	output:
-		f"{config['output_dir']}/variants/Trio.initial"
+		f"{config['output_dir']}/variants/Trio.initial.extreme.xls",
+		f"{config['output_dir']}/variants/Trio.initial.hg38_multianno.txt"
 	shell:
 		f"""perl {config['ExtremeVar_PATH']} \\
 		-in {config['output_dir']}/variants/Trio.annovar \\
@@ -907,7 +906,6 @@ rule get_Trio: # $getTrio $dir[2]/$Trio/$Proband",".preDNMs.txt $Trio.initial.tm
 
 # ====================== Another process Trios =====================
 rule process_Trios: # $process_Trios -in $Trio.initial.Trios.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.Trios.xls
-
 	input:
 		f"{config['output_dir']}/variants/Trio/Trio.initial.Trios.xls"
 	output:
@@ -945,7 +943,7 @@ rule ACMG2: # $acmg -in $Trio.Trios.xls -out $Trio.Trios.filter.xls
 rule getTrioVar:
 	input:
 		f"{config['getTrioVar_path']}",
-		f"{config['output_dir']}/variants/Trio.prefinal.xls"
+		f"{config['output_dir']}/variants/Trio.prefinal.xls",
 		f"{config['output_dir']}/variants/Trio.Trios.filter.xls"
 	output:
 		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
@@ -979,7 +977,7 @@ rule getTrioVar:
 # ====================== Finally get result ======================
 rule get_result: # $result $dir[3]/$Trio.Trios.filter.xls $dir[3]/$Trio.strict.xls $dir[3]/$Trio.clinvar_HGMD.xls $dir[3]/$Trio.loose.xls $dir[3]/$Trio.final.xls $opt{outdir}/$Trio.stat.xls $Trio.result.xls
 	input:
-		f"{config['get_result_path']}"
+		f"{config['get_result_path']}",
 		f"{config['output_dir']}/variants/Trio.Trios.filter.xls",
 		f"{config['output_dir']}/variants/Trio.strict.xls",
 		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
