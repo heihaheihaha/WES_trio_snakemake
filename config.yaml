@@ -19,7 +19,8 @@ MPsoft: 0.6
 MPsoft2: 0.1
 MAFS: "gnomAD_exome_ALL,0.001:gnomad312_AF,0.001:gnomAD_exome_EAS,0.001:gnomad312_AF_eas,0.001:ExAC_EAS,0.001:ExAC_ALL,0.001:esp6500siv2_all,0.001:1000g2015aug_eas,0.001:1000g2015aug_all,0.001"
 
-
+DNMs_p: 0.9
+DNMs_c: 1
 
 category: "genebased-hgmd-gene4denovo"
 
@@ -45,8 +46,18 @@ panel_PATH: "/data/wangty/WES_pipeline_V2.2/lib/gene_list/all.gene.txt"
 acmg78: "/data/wangty/WES_pipeline_V2.2/lib/ACMG78.list"
 database_path: "/data/wangty/WES_pipeline_V2.2/database/hg38/annovar"
 
+# DenovoCNN model
+snp_model: "/data/wangty/my_bin/DeNovoCNN-main/models/snv.h5"
+indel_model: "/data/wangty/my_bin/DeNovoCNN-main/models/indel.h5"
+del_model: "/data/wangty/my_bin/DeNovoCNN-main/models/del.h5"
+
 # BIN
 gatk_path: "/data/wangty/my_bin/gatk-4.4.0.0/gatk"
+FilterVar_path: "/data/wangty/WES_pipeline_V2.2/lib/FilterVar.pl"
+DenovoCNN_env: "/data/wangty/my_bin/DeNovoCNN-main/environment.yml"
+DenovoCNN_path: "/data/wangty/my_bin/DeNovoCNN-main/apply_denovocnn.sh"
+FilterDNMs_path: "/data/wangty/WES_pipeline_V2.2/lib/FilterDNMs.pl"
+
 progress_PATH: "/data/wangty/WES_pipeline_V2.2/lib/process.pl"
 ACMG_perl_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/ACMG.pl"
 getVar2_script_PATH: "/data/wangty/WES_pipeline_V2.2/lib/getVar2.pl"

@@ -686,8 +686,127 @@ rule SNP_VariantFiltration:
 		f"""{gatk} VariantFiltration
 			-R {config['reference_panel_path']} \\
 			-V {config['output_dir']}/variants/Trio.snp.vcf \\
-			-O 
+			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
+			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
+			--filter-expression 'FS>60.0' --filter-name 'HIGH_FS' \\
+			--filter-expression 'MQ<40.0' --filter-name 'LOW_MQ' \\
+			--filter-expression 'MQRankSum<-12.5' --filter-name 'LOW_MQRS' \\
+			--filter-expression 'ReadPosRankSum<-8.0' --filter-name 'LOW_RPRS' \\
+			--filter-expression 'SOR>3.0' --filter-name 'HIGH_SOR' \\
+			-O {config['output_dir']}/variants/Trio.snp.pass.vcf
 		"""
+
+rule Indel_VariantFiltration: # --filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' --filter-expression  'QD<2.0' --filter-name 'LOW_QD' --filter-expression 'FS>200.0' --filter-name 'HIGH_FS' --filter-expression 'ReadPosRankSum<-20.0' --filter-name 'LOW_RPRS' --filter-expression 'SOR>10.0' --filter-name 'HIGH_SOR' 
+	input:
+		f"{config['output_dir']}/variants/Trio.indel.vcf"
+	output:
+		f"{config['output_dir']}/variants/Trio.indel.pass.vcf"
+	shell:
+		f"""{gatk} VariantFiltration
+			-R {config['reference_panel_path']} \\
+			-V {config['output_dir']}/variants/Trio.indel.vcf \\
+			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
+			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
+			--filter-expression 'FS>200.0' --filter-name 'HIGH_FS' \\
+			--filter-expression 'ReadPosRankSum<-20.0' --filter-name 'LOW_RPRS' \\
+			--filter-expression 'SOR>10.0' --filter-name 'HIGH_SOR' \\
+			-O {config['output_dir']}/variants/Trio.indel.pass.vcf
+		"""
+
+# ====================== Get filtered ======================
+rule get_filtered_snp_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.snp.pass.vcf > $Trio.snp.filter.vcf\n",
+
+	input:
+		f"{config['output_dir']}/variants/Trio.snp.pass.vcf"
+	output:
+		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
+	shell:
+		f"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print "\$_\\n"}' {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"""
+
+rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.indel.pass.vcf > $Trio.indel.filter.vcf\n"
+	input:
+		f"{config['output_dir']}/variants/Trio.indel.pass.vcf"
+	output:
+		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
+	shell:
+		f"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print "\$_\\n"}' {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"""
+
+# ====================== FilterVar ======================
+rule SNP_FilterVar:
+	input:
+		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
+	output:
+		f"{config['output_dir']}/variants/Trio.snp.annovar"
+	shell:
+		f"""perl {config['FilterVar_path']} \\
+			-in {config['output_dir']}/variants/Trio.snp.filter.vcf \\
+			-out {config['output_dir']}/variants/Trio.snp.annovar \\
+			-minhet 0.20 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough
+			"""
+
+rule Indel_FilterVar:
+	input:
+		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
+	output:
+		f"{config['output_dir']}/variants/Trio.indel.annovar"
+	shell:
+		f"""perl {config['FilterVar_path']} \\
+			-in {config['output_dir']}/variants/Trio.indel.filter.vcf \\
+			-out {config['output_dir']}/variants/Trio.indel.annovar \\
+			-minhet 0.30 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough
+		""" # -minhet different from SNP_FilterVar
+
+# ====================== Combine indel and snp ======================
+rule Combine_snp_indel_annovar:
+	input:
+		f"{config['output_dir']}/variants/Trio.snp.annovar",
+		f"{config['output_dir']}/variants/Trio.indel.annovar"
+	output:
+		f"{config['output_dir']}/variants/Trio.annovar"
+	shell:
+		f"""cat {config['output_dir']}/variants/Trio.snp.annovar {config['output_dir']}/variants/Trio.indel.annovar > {config['output_dir']}/variants/Trio.annovar"""
+
+# ====================== Find denovo mutation in Trio ======================
+rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[2]/$Father/$Father.vcf.gz -mv=$dir[2]/$Mother/$Mother.vcf.gz -cb=$dir[1]/$Proband/$Proband.sort.marked.bam -fb=$dir[1]/$Father/$Father.sort.marked.bam -mb=$dir[1]/$Mother/$Mother.sort.marked.bam -g=$ref_fa -sm=$snp_model -im=$ins_model -dm=$del_model -o=$Proband",".DNMs_predictions.csv
+
+	input:
+		f"{config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz",
+		f"{config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz",
+		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz",
+		f"{config['DenovoCNN_path']}"
+	output:
+		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv"
+	conda:
+		f"{config['DenovoCNN_env']}"
+	shell:
+		f"""bash {config['DenovoCNN_path']} \\
+			-w={config['output_dir']}/variants/{config['CHILD_sample_name']} \\
+			-cv={config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz \\
+			-fv={config['output_dir']}/variants/{config['FUO_sample_name']}.vcf.gz \\
+			-mv={config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz \\
+			-cb={config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam \\
+			-fb={config['output_dir']}/alignments/{config['FUO_sample_name']}.bwa.markdup.rg.bam \\
+			-mb={config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam \\
+			-g={config['reference_panel_path']} \\
+			-sm={config['snp_model']} \\
+			-im={config['ins_model']} \\
+			-dm={config['del_model']} \\
+			-o={config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv
+			"""
+
+rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $Proband",".preDNMs.txt -p $opt{DNMs_p} -c $opt{DNMs_c}
+	input:
+		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv"
+	output:
+		
+	shell:
+		f"""perl {config['FilterDNMs_path']}
+			-in {config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv \\
+			-out {config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
+			-p {config['DNMs_p']}
+			-c {config['DNMs_c']}
+		"""
+
 # ====================== Prepare environment ====================== 
 rule index_reference:
 	input:
