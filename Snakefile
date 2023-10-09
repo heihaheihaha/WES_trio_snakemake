@@ -11,6 +11,7 @@ def fa_dict(path0: str) -> str:
 	output_file = os.path.join(dir_path, file_name + ".dict")
 	return output_file
 
+
 ref_dict_path = fa_dict(ref_path0)
 
 Trio_ID = f"{config['TRIO_ID']}"
@@ -24,11 +25,24 @@ if ('ASD' in {config['panel_type']}):
 else:
 	getTrioVar_flag = 0
 
+# Get the name of known sites files's index's name
+def test_gz(input_file_path):
+	if input_file_path.endswith(".gz"):
+		return input_file_path + ".tbi"
+	else:
+		return input_file_path + ".idx"
+known_sites_index = test_gz(config["known_sites"])
+known_sites2_index = test_gz(config["known_sites2"])
+
+
 rule end:
 	input:
-		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R2.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R2.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R2.fastp_fastqc.html",
 		f"{config['output_dir']}/Result.xls",
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
@@ -89,8 +103,10 @@ rule FU0_fastQC:
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz",
 		f"{config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz"
 	output:
-		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}_fastqc.zip"
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R1.fastp_fastqc.zip",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R2.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['FU0_sample_name']}.R2.fastp_fastqc.zip"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
@@ -102,8 +118,10 @@ rule MU0_fastQC:
 		f"{config['output_dir']}/fastp/{config['MU0_sample_name']}.R1.fastp.gz",
 		f"{config['output_dir']}/fastp/{config['MU0_sample_name']}.R2.fastp.gz"
 	output:
-		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}_fastqc.zip"
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R1.fastp_fastqc.zip",
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R2.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['MU0_sample_name']}.R2.fastp_fastqc.zip"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
@@ -115,8 +133,10 @@ rule Child_fastQC:
 		f"{config['output_dir']}/fastp/{config['CHILD_sample_name']}.R1.fastp.gz",
 		f"{config['output_dir']}/fastp/{config['CHILD_sample_name']}.R2.fastp.gz"
 	output:
-		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}_fastqc.html",
-		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}_fastqc.zip"
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R1.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R1.fastp_fastqc.zip",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R2.fastp_fastqc.html",
+		f"{config['output_dir']}/fastqc/{config['CHILD_sample_name']}.R2.fastp_fastqc.zip"
 	conda:
 		"./first_step_mamba.yml"
 	shell:
@@ -237,11 +257,10 @@ rule FU0_mark_duplicates: # Notice MarkDuplicatesSpark is not BETA
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.metrics"
 	shell:
-		f"""{gatk} MarkDuplicatesSpark \\ 
+		f"""{gatk} MarkDuplicatesSpark \\
 			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
-			-M {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.metrics \\
-			--create-output-bam-index true
+			-M {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.metrics 
 """ # sambamba markdup will mark the duplicates in the bam file
 
 			#--RGPU -PU: Read-Group platform unit (eg. run barcode)
@@ -265,11 +284,10 @@ rule MU0_MarkDuplicatesSpark: # Notice MarkDuplicatesSpark is not BETA
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam",
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.metrics"
 	shell:
-		f"""{gatk} MarkDuplicatesSpark \\ 
+		f"""{gatk} MarkDuplicatesSpark \\
 			-I {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam \\
-			-M {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.metrics \\
-			--create-output-bam-index true
+			-M {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.metrics 
 """ 
 
 rule Child_MarkDuplicatesSpark:
@@ -279,11 +297,10 @@ rule Child_MarkDuplicatesSpark:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam",
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.metrics"
 	shell:
-		f"""{gatk} MarkDuplicatesSpark \\ 
+		f"""{gatk} MarkDuplicatesSpark \\
 			-I {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam \\
-			-M {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.metrics \\
-			--create-output-bam-index true
+			-M {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.metrics 
 """
 
 
@@ -327,7 +344,9 @@ rule FU0_BaseRecalibrator:
 		f"{config['reference_panel_path']}",
 		f"{config['reference_panel_path']}.fai",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"
 	shell:
@@ -346,7 +365,9 @@ rule MUO_BaseRecalibrator:
 		f"{config['reference_panel_path']}",
 		f"{config['reference_panel_path']}.fai",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam.table"
 	shell:
@@ -355,7 +376,8 @@ rule MUO_BaseRecalibrator:
 			-I {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam.table \\
 			--use-original-qualities \\
-			--known-sites {config['known_sites']}"""
+			--known-sites {config['known_sites']} \\
+			--known-sites {config['known_sites2']}""" # known-sites2 -> indel
 
 rule Child_BaseRecalibrator:
 	input:	
@@ -364,7 +386,9 @@ rule Child_BaseRecalibrator:
 		f"{config['reference_panel_path']}",
 		f"{config['reference_panel_path']}.fai",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam.table"
 	shell:
@@ -373,7 +397,8 @@ rule Child_BaseRecalibrator:
 			-I {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam.table \\
 			--use-original-qualities \\
-			--known-sites {config['known_sites']}"""
+			--known-sites {config['known_sites']} \\
+			--known-sites {config['known_sites2']}""" # known-sites2 -> indel
 # ====================== ApplyBQSR ======================
 
 rule FU0_ApplyBQSR:
@@ -446,7 +471,9 @@ rule FU0_BaseRecalibrator2:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam",
 		f"{config['reference_panel_path']}",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table"
 	shell:
@@ -454,7 +481,8 @@ rule FU0_BaseRecalibrator2:
 			-R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
-			--known-sites {config['known_sites']}"""
+			--known-sites {config['known_sites']} \\
+			--known-sites {config['known_sites2']}""" # known-sites2 -> indel
 
 rule FU0_AnalyzeCovariates:
 	input:
@@ -476,7 +504,9 @@ rule MU0_BaseRecalibrator2:
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam",
 		f"{config['reference_panel_path']}",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table"
 	shell:
@@ -484,7 +514,8 @@ rule MU0_BaseRecalibrator2:
 			-R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			-O {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
-			--known-sites {config['known_sites']}"""
+			--known-sites {config['known_sites']} \\
+			--known-sites {config['known_sites2']}""" # known-sites2 -> indel
 
 rule MU0_AnalyzeCovariates:
 	input:
@@ -506,7 +537,9 @@ rule Child_BaseRecalibrator2:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam",
 		f"{config['reference_panel_path']}",
 		f"{config['known_sites']}",
-		f"{config['known_sites']}.tbi"
+		known_sites_index,
+		f"{config['known_sites2']}",
+		known_sites2_index
 	output:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table"
 	shell:
@@ -514,7 +547,8 @@ rule Child_BaseRecalibrator2:
 			-R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			-O {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table \\
-			--known-sites {config['known_sites']}"""
+			--known-sites {config['known_sites']} \\
+			--known-sites {config['known_sites2']}"""
 
 rule Child_AnalyzeCovariates:
 	input:
@@ -692,7 +726,7 @@ rule SNP_VariantFiltration:
 	output:
 		f"{config['output_dir']}/variants/Trio.snp.pass.vcf"
 	shell:
-		f"""{gatk} VariantFiltration
+		f"""{gatk} VariantFiltration \\
 			-R {config['reference_panel_path']} \\
 			-V {config['output_dir']}/variants/Trio.snp.vcf \\
 			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
@@ -711,7 +745,7 @@ rule Indel_VariantFiltration: # --filter-expression 'QUAL<30.0' --filter-name 'L
 	output:
 		f"{config['output_dir']}/variants/Trio.indel.pass.vcf"
 	shell:
-		f"""{gatk} VariantFiltration
+		f"""{gatk} VariantFiltration \\
 			-R {config['reference_panel_path']} \\
 			-V {config['output_dir']}/variants/Trio.indel.vcf \\
 			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
@@ -807,10 +841,10 @@ rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $P
 	output:
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt"
 	shell:
-		f"""perl {config['FilterDNMs_path']}
+		f"""perl {config['FilterDNMs_path']} \\
 			-in {config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv \\
 			-out {config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
-			-p {config['DNMs_p']}
+			-p {config['DNMs_p']} \\
 			-c {config['DNMs_c']}
 		"""
 
@@ -832,7 +866,7 @@ rule ExtremeVar: # ExtremeVar -in $dir[2]/$Trio/$Trio.annovar -out $Trio.initial
 		--extreme \\
 		--extreme_all \\
 		--remove \\
-		-database {config['database_path']}  {db}
+		-database {config['database_path']}  {db} \\
 		-TrioID {Trio_ID}
 		"""
 
@@ -1023,10 +1057,19 @@ rule IndexFeatureFile: # index the known sites(dbsnp, vcf file, gz)
 	input:
 		f"{config['known_sites']}"
 	output:
-		f"{config['known_sites']}.tbi"
+		test_gz(config['known_sites'])
 	shell:
 		f"""{gatk} IndexFeatureFile \\
 			-I {config['known_sites']}"""
+
+rule IndexFeatureFile2: # index the known sites(dbsnp, vcf file, gz)
+	input:
+		f"{config['known_sites2']}"
+	output:
+		test_gz(config['known_sites2'])
+	shell:
+		f"""{gatk} IndexFeatureFile \\
+			-I {config['known_sites2']}"""
 
 rule fasta_faidx:
 	input:
