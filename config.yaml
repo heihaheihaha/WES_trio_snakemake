@@ -1,16 +1,16 @@
 # DATA
-FU0_R1_path: "/data/wangty/lyp_trio/ylp/21Y13924FU0.R1.clean.fastq.gz"
-FU0_R2_path: "/data/wangty/lyp_trio/ylp/21Y13924FU0.R2.clean.fastq.gz"
+FU0_R1_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001-F/2210B001-F.R1.fq.gz"
+FU0_R2_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001-F/2210B001-F.R2.fq.gz"
 
-MU0_R1_path: "/data/wangty/lyp_trio/ylp/21Y13924MU0.R1.clean.fastq.gz"
-MU0_R2_path: "/data/wangty/lyp_trio/ylp/21Y13924MU0.R2.clean.fastq.gz"
+MU0_R1_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001-M/2210B001-M.R1.fq.gz"
+MU0_R2_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001-M/2210B001-M.R2.fq.gz"
 
-CHILD_R1_path: "/data/wangty/lyp_trio/ylp/21Y13924.R1.clean.fastq.gz"
-CHILD_R2_path: "/data/wangty/lyp_trio/ylp/21Y13924.R2.clean.fastq.gz"
+CHILD_R1_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001/2210B001.R1.fq.gz"
+CHILD_R2_path: "/data/wangty/WES_pipeline_V2.2/example_trio/01.Cleandata/2210B001/2210B001.R2.fq.gz"
 
-TRIO_ID: "21Y13924"
+TRIO_ID: "2210B001-F,2210B001-M,2210B001,F"
 # OUT DIR
-output_dir: "/data/wangty/tmp/trio_WES"
+output_dir: "/data/wangty/tmp/example_trio_2210B001_trioT"
 
 # PARAMETER
 reference_panel_name: "hg38"

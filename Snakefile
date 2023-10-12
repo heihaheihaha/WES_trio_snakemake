@@ -21,9 +21,9 @@ for i in config["category"].split("-"):
     db += f"-{i} Y "
 
 if ('ASD' in {config['panel_type']}):
-	getTrioVar_flag = 1
+	getTrioVar_flag = "true"
 else:
-	getTrioVar_flag = 0
+	getTrioVar_flag = "false"
 
 # Get the name of known sites files's index's name
 def test_gz(input_file_path):
@@ -763,7 +763,7 @@ rule get_filtered_snp_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ 
 	output:
 		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
 	shell:
-		r"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){{print "\$_\\n"}}'"""+f""" {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"""
+		r"awk '!/^#/ && !/PASS/ {{print}}'" + f" {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"
 
 rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.indel.pass.vcf > $Trio.indel.filter.vcf\n"
 	input:
@@ -771,7 +771,7 @@ rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$
 	output:
 		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
 	shell:
-		r"""perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){{print "\$_\\n"}}'"""+f""" {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"""
+		r"awk '!/^#/ && !/PASS/ {{print}}'" + f" {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"
 
 # ====================== FilterVar ======================
 rule SNP_FilterVar:
@@ -816,12 +816,12 @@ rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz",
 		f"{config['DenovoCNN_path']}"
 	output:
-		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv"
+		f"{config['output_dir']}/DenovoCNN/predictions.csv"
 	conda:
 		f"{config['DenovoCNN_env']}"
 	shell:
 		f"""bash {config['DenovoCNN_path']} \\
-			-w={config['output_dir']}/variants/{config['CHILD_sample_name']} \\
+			-w={config['output_dir']}/DenovoCNN \\
 			-cv={config['output_dir']}/variants/{config['CHILD_sample_name']}.vcf.gz \\
 			-fv={config['output_dir']}/variants/{config['FU0_sample_name']}.vcf.gz \\
 			-mv={config['output_dir']}/variants/{config['MU0_sample_name']}.vcf.gz \\
@@ -832,17 +832,17 @@ rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[
 			-sm={config['snp_model']} \\
 			-im={config['ins_model']} \\
 			-dm={config['del_model']} \\
-			-o={config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv
+			-o=predictions.csv
 			"""
 
 rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $Proband",".preDNMs.txt -p $opt{DNMs_p} -c $opt{DNMs_c}
 	input:
-		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv"
+		f"{config['output_dir']}/DenovoCNN/predictions.csv"
 	output:
 		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt"
 	shell:
 		f"""perl {config['FilterDNMs_path']} \\
-			-in {config['output_dir']}/variants/{config['CHILD_sample_name']}.DNMs_predictions.csv \\
+			-in {config['output_dir']}/DenovoCNN/predictions.csv \\
 			-out {config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
 			-p {config['DNMs_p']} \\
 			-c {config['DNMs_c']}
@@ -893,8 +893,11 @@ rule awk_select: # 		"awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1
 	output:
 		f"{config['output_dir']}/variants/Trio.initial.xls"
 	shell:
-		r"""awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1 {if(\$1~/Y/ || \$105~/pathogenic/ || \$105~/drug_response/ || (\$107~/DM/ && \$105 !~/benign/)) print \$0}' {config['output_dir']}/variants/Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > {config['output_dir']}/variants/Trio.initial.xls"""
-
+		r"""awk -F "\t" 'BEGIN{{IGNORECASE=1}} NR==1 {{print $0}} NR>1 {{if($1~/Y/ || $105~/pathogenic/ || $105~/drug_response/ || ($107~/DM/ && $105 !~/benign/)) print $0}}' """ + f"""{config['output_dir']}/variants/Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > {config['output_dir']}/variants/Trio.initial.xls"""
+		# This rule filters variants from an initial Trio VCF file based on specific criteria and generates a final XLS file.
+		# The criteria used for filtering are: variants on the Y chromosome, variants classified as pathogenic or related to drug response, and variants classified as DM but not benign.
+		# The input file is Trio.initial.tmp.xls, and the output file is Trio.initial.xls.
+		
 # ====================== Process Trio ======================
 rule Process_Trios: # $process_trio -in $Trio.initial.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.extreme.xls
 	input:
@@ -985,7 +988,7 @@ rule getTrioVar:
 		f"{config['output_dir']}/variants/Trio.strict.xls",
 		f"{config['output_dir']}/variants/Trio.final.xls"
 	shell:
-		f"""if [{getTrioVar_flag}]
+		f"""if {getTrioVar_flag}
 			then
 				perl {config['getTrioVar_path']} \\
 					-in {config['output_dir']}/variants/Trio.prefinal.xls \\
