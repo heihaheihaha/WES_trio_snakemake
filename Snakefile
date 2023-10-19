@@ -63,7 +63,8 @@ rule FU0_fastp:
 	shell:
 		f"""fastp -i {config['FU0_R1_path']} -I {config['FU0_R2_path']} \\
 		-o {config['output_dir']}/fastp/{config['FU0_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['FU0_sample_name']}.R2.fastp.gz \\
-		-h {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.json"""
+		-h {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['FU0_sample_name']}_fastp.json \\
+		-q 20 -l 40"""
 
 rule MU0_fastp:
 	input:
@@ -79,7 +80,8 @@ rule MU0_fastp:
 	shell:
 		f"""fastp -i {config['MU0_R1_path']} -I {config['MU0_R2_path']} \\
 		-o {config['output_dir']}/fastp/{config['MU0_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['MU0_sample_name']}.R2.fastp.gz \\
-		-h {config['output_dir']}/fastp/{config['MU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['MU0_sample_name']}_fastp.json"""
+		-h {config['output_dir']}/fastp/{config['MU0_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['MU0_sample_name']}_fastp.json \\
+		-q 20 -l 40"""
 
 rule Child_fastp:
 	input:
@@ -95,7 +97,8 @@ rule Child_fastp:
 	shell:
 		f"""fastp -i {config['CHILD_R1_path']} -I {config['CHILD_R2_path']} \\
 		-o {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R1.fastp.gz -O {config['output_dir']}/fastp/{config['CHILD_sample_name']}.R2.fastp.gz \\
-		-h {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.json"""
+		-h {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.html -j {config['output_dir']}/fastp/{config['CHILD_sample_name']}_fastp.json \\
+		-q 20 -l 40"""
 
 # ====================== fastQC ======================
 rule FU0_fastQC:
@@ -407,7 +410,7 @@ rule FU0_ApplyBQSR:
 	output:
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	shell:
-		f"""{gatk} ApplyBQSRSpark -R {config['reference_panel_path']} \\
+		f"""{gatk} ApplyBQSR -R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			--bqsr-recal-file {config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bam.table"""
@@ -418,7 +421,7 @@ rule MU0_ApplyBQSR:
 	output:
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	shell:
-		f"""{gatk} ApplyBQSRSpark -R {config['reference_panel_path']} \\
+		f"""{gatk} ApplyBQSR -R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			--bqsr-recal-file {config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bam.table"""
@@ -429,7 +432,7 @@ rule Child_ApplyBQSR:
 	output:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam"
 	shell:
-		f"""{gatk} ApplyBQSRSpark -R {config['reference_panel_path']} \\
+		f"""{gatk} ApplyBQSR -R {config['reference_panel_path']} \\
 			-I {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam \\
 			-O {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam \\
 			--bqsr-recal-file {config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bam.table"""
@@ -665,14 +668,14 @@ rule CombineGVCFs:
 		f"{config['reference_panel_path']}",
 		f"{config['known_sites']}"
 	output:
-		f"{config['output_dir']}/variants/Trio.g.vcf.gz"
+		f"{config['output_dir']}/Trio_var/Trio.g.vcf.gz"
 	shell:
 		f"""{gatk} CombineGVCFs \\
 			-R {config['reference_panel_path']} \\
 			-V {config['output_dir']}/variants/{config['FU0_sample_name']}.g.vcf.gz \\
 			-V {config['output_dir']}/variants/{config['MU0_sample_name']}.g.vcf.gz \\
 			-V {config['output_dir']}/variants/{config['CHILD_sample_name']}.g.vcf.gz \\
-			-O {config['output_dir']}/variants/Trio.g.vcf.gz \\
+			-O {config['output_dir']}/Trio_var/Trio.g.vcf.gz \\
 			-ip 50 \\
 			-L {config['bed_path']} \\
 			-D {config['known_sites']}"""
@@ -680,55 +683,55 @@ rule CombineGVCFs:
 # ====================== Trio GenotypeGVCFs ======================
 rule Trio_GenotypeGVCFs:
 	input:
-		f"{config['output_dir']}/variants/Trio.g.vcf.gz",
+		f"{config['output_dir']}/Trio_var/Trio.g.vcf.gz",
 		f"{config['reference_panel_path']}"
 	output:
-		f"{config['output_dir']}/variants/Trio.vcf.gz"
+		f"{config['output_dir']}/Trio_var/Trio.vcf.gz"
 	shell:
 		f"""{gatk} GenotypeGVCFs \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/Trio.g.vcf.gz \\
-			-O {config['output_dir']}/variants/Trio.vcf.gz"""
+			-V {config['output_dir']}/Trio_var/Trio.g.vcf.gz \\
+			-O {config['output_dir']}/Trio_var/Trio.vcf.gz"""
 
 # ====================== VariantFiltration ======================
 rule SNP_SelectVariants:
 	input:
-		f"{config['output_dir']}/variants/Trio.vcf.gz",
+		f"{config['output_dir']}/Trio_var/Trio.vcf.gz",
 		f"{config['reference_panel_path']}"
 	output:
-		f"{config['output_dir']}/variants/Trio.snp.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.vcf"
 	shell:
 		f"""{gatk} SelectVariants \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/Trio.vcf.gz \\
+			-V {config['output_dir']}/Trio_var/Trio.vcf.gz \\
 			--select-type-to-include SNP \\
-			-O {config['output_dir']}/variants/Trio.snp.vcf
+			-O {config['output_dir']}/Trio_var/Trio.snp.vcf
 		"""
 
 rule Indel_SelectVariants:
 	input:
-		f"{config['output_dir']}/variants/Trio.vcf.gz",
+		f"{config['output_dir']}/Trio_var/Trio.vcf.gz",
 		f"{config['reference_panel_path']}"
 	output:
-		f"{config['output_dir']}/variants/Trio.indel.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.vcf"
 	shell:
 		f"""{gatk} SelectVariants \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/Trio.vcf.gz \\
+			-V {config['output_dir']}/Trio_var/Trio.vcf.gz \\
 			--select-type-to-include INDEL \\
-			-O {config['output_dir']}/variants/Trio.indel.vcf
+			-O {config['output_dir']}/Trio_var/Trio.indel.vcf
 		"""
 
 # ====================== VariantFiltration ======================
 rule SNP_VariantFiltration:
 	input:
-		f"{config['output_dir']}/variants/Trio.snp.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.snp.pass.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.pass.vcf"
 	shell:
 		f"""{gatk} VariantFiltration \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/Trio.snp.vcf \\
+			-V {config['output_dir']}/Trio_var/Trio.snp.vcf \\
 			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
 			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
 			--filter-expression 'FS>60.0' --filter-name 'HIGH_FS' \\
@@ -736,77 +739,78 @@ rule SNP_VariantFiltration:
 			--filter-expression 'MQRankSum<-12.5' --filter-name 'LOW_MQRS' \\
 			--filter-expression 'ReadPosRankSum<-8.0' --filter-name 'LOW_RPRS' \\
 			--filter-expression 'SOR>3.0' --filter-name 'HIGH_SOR' \\
-			-O {config['output_dir']}/variants/Trio.snp.pass.vcf
+			-O {config['output_dir']}/Trio_var/Trio.snp.pass.vcf
 		"""
 
 rule Indel_VariantFiltration: # --filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' --filter-expression  'QD<2.0' --filter-name 'LOW_QD' --filter-expression 'FS>200.0' --filter-name 'HIGH_FS' --filter-expression 'ReadPosRankSum<-20.0' --filter-name 'LOW_RPRS' --filter-expression 'SOR>10.0' --filter-name 'HIGH_SOR' 
 	input:
-		f"{config['output_dir']}/variants/Trio.indel.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.indel.pass.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.pass.vcf"
 	shell:
 		f"""{gatk} VariantFiltration \\
 			-R {config['reference_panel_path']} \\
-			-V {config['output_dir']}/variants/Trio.indel.vcf \\
+			-V {config['output_dir']}/Trio_var/Trio.indel.vcf \\
 			--filter-expression 'QUAL<30.0' --filter-name 'LOW_QUAL' \\
 			--filter-expression 'QD<2.0' --filter-name 'LOW_QD' \\
 			--filter-expression 'FS>200.0' --filter-name 'HIGH_FS' \\
 			--filter-expression 'ReadPosRankSum<-20.0' --filter-name 'LOW_RPRS' \\
 			--filter-expression 'SOR>10.0' --filter-name 'HIGH_SOR' \\
-			-O {config['output_dir']}/variants/Trio.indel.pass.vcf
+			-O {config['output_dir']}/Trio_var/Trio.indel.pass.vcf
 		"""
 
 # ====================== Get filtered ======================
+# Remove useless rows
 rule get_filtered_snp_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.snp.pass.vcf > $Trio.snp.filter.vcf\n",
 	input:
-		f"{config['output_dir']}/variants/Trio.snp.pass.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.pass.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.Urow.vcf"
 	shell:
-		r"awk '!/^#/ && !/PASS/ {{print}}'" + f" {config['output_dir']}/variants/Trio.snp.pass.vcf > {config['output_dir']}/variants/Trio.snp.filter.vcf"
+		r"awk '/^#/ || /PASS/ {{print}}'" + f" {config['output_dir']}/Trio_var/Trio.snp.pass.vcf > {config['output_dir']}/Trio_var/Trio.snp.Urow.vcf"
 
 rule get_filtered_indel_VariantFiltration: #	"perl -ne 'chomp;if(\$_=~/^#/ || \$_ =~ /PASS/){print \"\$_\\n\"}' $Trio.indel.pass.vcf > $Trio.indel.filter.vcf\n"
 	input:
-		f"{config['output_dir']}/variants/Trio.indel.pass.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.pass.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.Urow.vcf"
 	shell:
-		r"awk '!/^#/ && !/PASS/ {{print}}'" + f" {config['output_dir']}/variants/Trio.indel.pass.vcf > {config['output_dir']}/variants/Trio.indel.filter.vcf"
+		r"awk '/^#/ || /PASS/ {{print}}'" + f" {config['output_dir']}/Trio_var/Trio.indel.pass.vcf > {config['output_dir']}/Trio_var/Trio.indel.Urow.vcf"
 
 # ====================== FilterVar ======================
 rule SNP_FilterVar:
 	input:
-		f"{config['output_dir']}/variants/Trio.snp.filter.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.snp.Urow.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.snp.annovar"
+		f"{config['output_dir']}/Trio_var/Trio.snp.annovar"
 	shell:
 		f"""perl {config['FilterVar_path']} \\
-			-in {config['output_dir']}/variants/Trio.snp.filter.vcf \\
-			-out {config['output_dir']}/variants/Trio.snp.annovar \\
+			-in {config['output_dir']}/Trio_var/Trio.snp.Urow.vcf \\
+			-out {config['output_dir']}/Trio_var/Trio.snp.annovar \\
 			-minhet 0.20 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough
 			"""
 
 rule Indel_FilterVar:
 	input:
-		f"{config['output_dir']}/variants/Trio.indel.filter.vcf"
+		f"{config['output_dir']}/Trio_var/Trio.indel.Urow.vcf"
 	output:
-		f"{config['output_dir']}/variants/Trio.indel.annovar"
+		f"{config['output_dir']}/Trio_var/Trio.indel.annovar"
 	shell:
 		f"""perl {config['FilterVar_path']} \\
-			-in {config['output_dir']}/variants/Trio.indel.filter.vcf \\
-			-out {config['output_dir']}/variants/Trio.indel.annovar \\
+			-in {config['output_dir']}/Trio_var/Trio.indel.Urow.vcf \\
+			-out {config['output_dir']}/Trio_var/Trio.indel.annovar \\
 			-minhet 0.30 --wildsample -qual 30 -dp 20 -adp 10 -gq 30 --rough
 		""" # -minhet different from SNP_FilterVar
 
 # ====================== Combine indel and snp ======================
 rule Combine_snp_indel_annovar:
 	input:
-		f"{config['output_dir']}/variants/Trio.snp.annovar",
-		f"{config['output_dir']}/variants/Trio.indel.annovar"
+		f"{config['output_dir']}/Trio_var/Trio.snp.annovar",
+		f"{config['output_dir']}/Trio_var/Trio.indel.annovar"
 	output:
-		f"{config['output_dir']}/variants/Trio.annovar"
+		f"{config['output_dir']}/Trio_var_annot/Trio.annovar"
 	shell:
-		f"""cat {config['output_dir']}/variants/Trio.snp.annovar {config['output_dir']}/variants/Trio.indel.annovar > {config['output_dir']}/variants/Trio.annovar"""
+		f"""cat {config['output_dir']}/Trio_var/Trio.snp.annovar {config['output_dir']}/Trio_var/Trio.indel.annovar > {config['output_dir']}/Trio_var_annot/Trio.annovar"""
 
 # ====================== Find denovo mutation in Trio ======================
 rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[2]/$Father/$Father.vcf.gz -mv=$dir[2]/$Mother/$Mother.vcf.gz -cb=$dir[1]/$Proband/$Proband.sort.marked.bam -fb=$dir[1]/$Father/$Father.sort.marked.bam -mb=$dir[1]/$Mother/$Mother.sort.marked.bam -g=$ref_fa -sm=$snp_model -im=$ins_model -dm=$del_model -o=$Proband",".DNMs_predictions.csv
@@ -834,16 +838,16 @@ rule DenovoCNN:# -w=$dir[2]/$Trio -cv=$dir[2]/$Proband/$Proband.vcf.gz -fv=$dir[
 			-dm={config['del_model']} \\
 			-o=predictions.csv
 			"""
-
+#################ENDPOINT#################
 rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $Proband",".preDNMs.txt -p $opt{DNMs_p} -c $opt{DNMs_c}
 	input:
 		f"{config['output_dir']}/DenovoCNN/predictions.csv"
 	output:
-		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt"
-	shell:
+		f"{config['output_dir']}/DenovoCNN/{config['CHILD_sample_name']}.preDNMs.txt"
+	shell: # TODO
 		f"""perl {config['FilterDNMs_path']} \\
 			-in {config['output_dir']}/DenovoCNN/predictions.csv \\
-			-out {config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
+			-out {config['output_dir']}/DenovoCNN/{config['CHILD_sample_name']}.preDNMs.txt \\
 			-p {config['DNMs_p']} \\
 			-c {config['DNMs_c']}
 		"""
@@ -852,14 +856,14 @@ rule Filter_DenovoCNN: # FilterDNMs -in $Proband",".DNMs_predictions.csv -out $P
 rule ExtremeVar: # ExtremeVar -in $dir[2]/$Trio/$Trio.annovar -out $Trio.initial -Psoft $opt{Psoft} -maf $opt{MAFS} -reference $opt{ref} --extreme --extreme_all --remove -database $db_path  $db -TrioID $opt{TrioID}\n
 	input:
 		f"{config['ExtremeVar_PATH']}",
-		f"{config['output_dir']}/variants/Trio.annovar"
+		f"{config['output_dir']}/Trio_var_annot/Trio.annovar"
 	output:
-		f"{config['output_dir']}/variants/Trio.initial.extreme.xls",
-		f"{config['output_dir']}/variants/Trio.initial.hg38_multianno.txt"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.extreme.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.hg38_multianno.txt"
 	shell:
 		f"""perl {config['ExtremeVar_PATH']} \\
-		-in {config['output_dir']}/variants/Trio.annovar \\
-		-out {config['output_dir']}/variants/Trio.initial \\
+		-in {config['output_dir']}/Trio_var_annot/Trio.annovar \\
+		-out {config['output_dir']}/Trio_var_annot/Trio.initial \\
 		-Psoft {config['Psoft']} \\
 		-maf {config['MAFS']} \\
 		-reference {config['reference_panel_name']} \\
@@ -874,13 +878,13 @@ rule ExtremeVar: # ExtremeVar -in $dir[2]/$Trio/$Trio.annovar -out $Trio.initial
 rule ExtremeVar2:
 	input:
 		f"{config['ExtremeVar2_PATH']}",
-		f"{config['output_dir']}/variants/Trio.initial.extreme.xls",
-		f"{config['output_dir']}/variants/Trio.initial.hg38_multianno.txt"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.extreme.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.hg38_multianno.txt"
 	output:
-		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.tmp.xls"
 	shell:
 		f"""perl {config['ExtremeVar2_PATH']} \\
-		-out {config['output_dir']}/variants/Trio.initial \\
+		-out {config['output_dir']}/Trio_var_annot/Trio.initial \\
 		--extreme \\
 		--extreme_all \\
 		-MPsoft {config['MPsoft2']} \\
@@ -889,11 +893,11 @@ rule ExtremeVar2:
 
 rule awk_select: # 		"awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1 {if(\$1~/Y/ || \$105~/pathogenic/ || \$105~/drug_response/ || (\$107~/DM/ && \$105 !~/benign/)) print \$0}' $Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > $Trio.initial.xls\n",
 	input:
-		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.tmp.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio.initial.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.xls"
 	shell:
-		r"""awk -F "\t" 'BEGIN{{IGNORECASE=1}} NR==1 {{print $0}} NR>1 {{if($1~/Y/ || $105~/pathogenic/ || $105~/drug_response/ || ($107~/DM/ && $105 !~/benign/)) print $0}}' """ + f"""{config['output_dir']}/variants/Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > {config['output_dir']}/variants/Trio.initial.xls"""
+		r"""awk -F "\t" 'BEGIN{{IGNORECASE=1}} NR==1 {{print $0}} NR>1 {{if($1~/Y/ || $105~/pathogenic/ || $105~/drug_response/ || ($107~/DM/ && $105 !~/benign/)) print $0}}' """ + f"""{config['output_dir']}/Trio_var_annot/Trio.initial.tmp.xls | cut -f 1-10,12-26,30-33,37,41,45,51-53,55-60,64,69,79,85,88,93-94,97,100-111,115 > {config['output_dir']}/Trio_var_annot/Trio.initial.xls"""
 		# This rule filters variants from an initial Trio VCF file based on specific criteria and generates a final XLS file.
 		# The criteria used for filtering are: variants on the Y chromosome, variants classified as pathogenic or related to drug response, and variants classified as DM but not benign.
 		# The input file is Trio.initial.tmp.xls, and the output file is Trio.initial.xls.
@@ -901,73 +905,74 @@ rule awk_select: # 		"awk -F \"\\t\" 'BEGIN{IGNORECASE=1} NR==1 {print \$0} NR>1
 # ====================== Process Trio ======================
 rule Process_Trios: # $process_trio -in $Trio.initial.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.extreme.xls
 	input:
-		f"{config['output_dir']}/variants/Trio.initial.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio.extreme.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.extreme.xls"
 	shell:
 		f"""perl {config['process_trio_path']} \\
-			-in {config['output_dir']}/variants/Trio.initial.xls \\
+			-in {config['output_dir']}/Trio_var_annot/Trio.initial.xls \\
 			-TP {config['TRANSCRIPT']} \\
 			-Inheritance {config['GENEMODEL']} \\
 			-HPO {config['HPO']} \\
 			-TrioID {Trio_ID} \\
-			-out {config['output_dir']}/variants/Trio.extreme.xls
+			-out {config['output_dir']}/Trio_var_annot/Trio.extreme.xls
 		"""
 
 # ====================== Sample ACMG ======================
 # line 243
-rule ACMG: # $acmg -in $Trio.extreme.xls -out $Trio.prefinal.xls 
-	input:
-		f"{config['ACMG_path']}",
-		f"{config['output_dir']}/variants/Trio.extreme.xls"
-	output:
-		f"{config['output_dir']}/variants/Trio.prefinal.xls"
-	shell:
-		f"""perl {config['ACMG_path']} \\
-			-in {config['output_dir']}/variants/Trio.extreme.xls \\
-			-out {config['output_dir']}/variants/Trio.prefinal.xls
-		"""
+#TODO: add ACMG rule
+# rule ACMG: # $acmg -in $Trio.extreme.xls -out $Trio.prefinal.xls 
+# 	input:
+# 		f"{config['ACMG_path']}",
+# 		f"{config['output_dir']}/Trio_var_annot/Trio.extreme.xls"
+# 	output:
+# 		f"{config['output_dir']}/Trio_var_annot/Trio.prefinal.xls"
+# 	shell:
+# 		f"""perl {config['ACMG_path']} \\
+# 			-in {config['output_dir']}/Trio_var_annot/Trio.extreme.xls \\
+# 			-out {config['output_dir']}/Trio_var_annot/Trio.prefinal.xls
+# 		"""
 # ====================== Get trio ======================
 rule get_Trio: # $getTrio $dir[2]/$Trio/$Proband",".preDNMs.txt $Trio.initial.tmp.xls $Trio.initial.Trios.extreme.xls | cut -f 1-11,13-27,31-34,38,42,46,52-54,56-61,65,70,80,86,89,94-95,98,101-112,116  > $Trio.initial.Trios.xls
 	input:
-		f"{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt",
-		f"{config['output_dir']}/variants/Trio.initial.tmp.xls"
+		f"{config['output_dir']}/DenovoCNN/{config['CHILD_sample_name']}.preDNMs.txt",
+		f"{config['output_dir']}/Trio_var_annot/Trio.initial.tmp.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio/Trio.initial.Trios.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio/Trio.initial.Trios.xls"
 	shell:
 		f"""perl {config['getTrio_path']} \\
-			{config['output_dir']}/variants/{config['CHILD_sample_name']}.preDNMs.txt \\
-			{config['output_dir']}/variants/Trio.initial.tmp.xls \\
-			{config['output_dir']}/variants/Trio.initial.Trios.extreme.xls | cut -f 1-11,13-27,31-34,38,42,46,52-54,56-61,65,70,80,86,89,94-95,98,101-112,116  > {config['output_dir']}/variants/Trio/Trio.initial.Trios.xls
+			{config['output_dir']}/DenovoCNN/{config['CHILD_sample_name']}.preDNMs.txt \\
+			{config['output_dir']}/Trio_var_annot/Trio.initial.tmp.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.initial.Trios.extreme.xls | cut -f 1-11,13-27,31-34,38,42,46,52-54,56-61,65,70,80,86,89,94-95,98,101-112,116  > {config['output_dir']}/Trio_var_annot/Trio/Trio.initial.Trios.xls
 		"""
 
 # ====================== Another process Trios =====================
 rule process_Trios: # $process_Trios -in $Trio.initial.Trios.xls -TP $transcript -Inheritance $gm -HPO $hpo -TrioID $opt{TrioID} -out $Trio.Trios.xls
 	input:
-		f"{config['output_dir']}/variants/Trio/Trio.initial.Trios.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio/Trio.initial.Trios.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio/Trio.Trios.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio/Trio.Trios.xls"
 	shell:
 		f"""perl {config['process_Trios_path']} \\
-			-in {config['output_dir']}/variants/Trio/Trio.initial.Trios.xls \\
+			-in {config['output_dir']}/Trio_var_annot/Trio/Trio.initial.Trios.xls \\
 			-TP {config['TRANSCRIPT']} \\
 			-Inheritance {config['GENEMODEL']} \\
 			-HPO {config['HPO']} \\
 			-TrioID {Trio_ID} \\
-			-out {config['output_dir']}/variants/Trio/Trio.Trios.xls
+			-out {config['output_dir']}/Trio_var_annot/Trio/Trio.Trios.xls
 		"""
 
 # ====================== Sample ACMG ======================
 rule ACMG2: # $acmg -in $Trio.Trios.xls -out $Trio.Trios.filter.xls
 	input:
 		f"{config['ACMG_path']}",
-		f"{config['output_dir']}/variants/Trio/Trio.Trios.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio/Trio.Trios.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio.Trios.filter.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls"
 	shell:
 		f"""perl {config['ACMG_path']} \\
-			-in {config['output_dir']}/variants/Trio/Trio.Trios.xls \\
-			-out {config['output_dir']}/variants/Trio.Trios.filter.xls
+			-in {config['output_dir']}/Trio_var_annot/Trio/Trio.Trios.xls \\
+			-out {config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls
 		"""
 
 # ====================== OUTPUT ALL ======================
@@ -980,34 +985,34 @@ rule ACMG2: # $acmg -in $Trio.Trios.xls -out $Trio.Trios.filter.xls
 rule getTrioVar:
 	input:
 		f"{config['getTrioVar_path']}",
-		f"{config['output_dir']}/variants/Trio.prefinal.xls",
-		f"{config['output_dir']}/variants/Trio.Trios.filter.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.extreme.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls"
 	output:
-		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
-		f"{config['output_dir']}/variants/Trio.loose.xls",
-		f"{config['output_dir']}/variants/Trio.strict.xls",
-		f"{config['output_dir']}/variants/Trio.final.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.clinvar_HGMD.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.loose.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.strict.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.final.xls"
 	shell:
 		f"""if {getTrioVar_flag}
 			then
 				perl {config['getTrioVar_path']} \\
-					-in {config['output_dir']}/variants/Trio.prefinal.xls \\
+					-in {config['output_dir']}/Trio_var_annot/Trio.extreme.xls \\
 					-list {config['panel_path']} \\
 					-acmglist {config['acmg78_path']} \\
-					-DNMs {config['output_dir']}/variants/Trio.Trios.filter.xls \\
-					-o1 {config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
-					-o2 {config['output_dir']}/variants/Trio.loose.xls \\
-					-o3 {config['output_dir']}/variants/Trio.strict.xls \\
-					-o4 {config['output_dir']}/variants/Trio.final.xls
+					-DNMs {config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls \\
+					-o1 {config['output_dir']}/Trio_var_annot/Trio.clinvar_HGMD.xls \\
+					-o2 {config['output_dir']}/Trio_var_annot/Trio.loose.xls \\
+					-o3 {config['output_dir']}/Trio_var_annot/Trio.strict.xls \\
+					-o4 {config['output_dir']}/Trio_var_annot/Trio.final.xls
 			else
 				perl {config['getTrioVar_path']} \\
-					-in {config['output_dir']}/variants/Trio.prefinal.xls \\
+					-in {config['output_dir']}/Trio_var_annot/Trio.extreme.xls \\
 					-acmglist {config['acmg78_path']} \\
-					-DNMs {config['output_dir']}/variants/Trio.Trios.filter.xls \\
-					-o1 {config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
-					-o2 {config['output_dir']}/variants/Trio.loose.xls \\
-					-o3 {config['output_dir']}/variants/Trio.strict.xls \\
-					{config['output_dir']}/variants/Trio.final.xls
+					-DNMs {config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls \\
+					-o1 {config['output_dir']}/Trio_var_annot/Trio.clinvar_HGMD.xls \\
+					-o2 {config['output_dir']}/Trio_var_annot/Trio.loose.xls \\
+					-o3 {config['output_dir']}/Trio_var_annot/Trio.strict.xls \\
+					{config['output_dir']}/Trio_var_annot/Trio.final.xls
 			fi
 		"""
 
@@ -1015,20 +1020,20 @@ rule getTrioVar:
 rule get_result: # $result $dir[3]/$Trio.Trios.filter.xls $dir[3]/$Trio.strict.xls $dir[3]/$Trio.clinvar_HGMD.xls $dir[3]/$Trio.loose.xls $dir[3]/$Trio.final.xls $opt{outdir}/$Trio.stat.xls $Trio.result.xls
 	input:
 		f"{config['get_result_path']}",
-		f"{config['output_dir']}/variants/Trio.Trios.filter.xls",
-		f"{config['output_dir']}/variants/Trio.strict.xls",
-		f"{config['output_dir']}/variants/Trio.clinvar_HGMD.xls",
-		f"{config['output_dir']}/variants/Trio.loose.xls",
-		f"{config['output_dir']}/variants/Trio.final.xls"
+		f"{config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.strict.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.clinvar_HGMD.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.loose.xls",
+		f"{config['output_dir']}/Trio_var_annot/Trio.final.xls"
 	output:
 		f"{config['output_dir']}/Result.xls"
 	shell:
 		f"""perl {config['get_result_path']} \\
-			{config['output_dir']}/variants/Trio.Trios.filter.xls \\
-			{config['output_dir']}/variants/Trio.strict.xls \\
-			{config['output_dir']}/variants/Trio.clinvar_HGMD.xls \\
-			{config['output_dir']}/variants/Trio.loose.xls \\
-			{config['output_dir']}/variants/Trio.final.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.Trios.filter.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.strict.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.clinvar_HGMD.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.loose.xls \\
+			{config['output_dir']}/Trio_var_annot/Trio.final.xls \\
 			{config['output_dir']}/Result.xls
 		"""
 
