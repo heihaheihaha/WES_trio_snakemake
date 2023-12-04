@@ -10,48 +10,74 @@ from argparse import RawTextHelpFormatter
 parser = argparse.ArgumentParser(description='''The help of this script
 ======================================================================
 Usage:
-    python3 PathG.py -d <path> -o <output>
+	python3 PathG.py -d <dir_path> -o <output>
+    -d, --directory		The directory containing the fastq files
+    -o, --output		The Path of output JSON file, default: All_sample.json
+======================================================================
 This script is used to generate the json file of sample fasq files list
-these file should end with `.fq.gz` or `.fastq.gz`
+these file should end with `.fq.gz` or `.fastq.gz`, file start with `.`
+will be ignored.						 
+
+Format of All_sample.json:
+{
+    "V300102848": {
+        "L03": {
+            "R1": "/home/Genomics/V300102848_L03_86_1.fq.gz",
+            "R2": "/home/Genomics/V300102848_L03_86_2.fq.gz"
+        },
+        "L04": {
+            "R1": "/home/Genomics/V300102848_L04_86_1.fq.gz",
+            "R2": "/home/Genomics/V300102848_L04_86_2.fq.gz"
+        }
+    },
+    "V300102849": {
+        "L03": {
+            "R1": "/home/Genomics/V300102849_L03_86_1.fq.gz",
+            "R2": "/home/Genomics/V300102849_L03_86_2.fq.gz"
+        },
+        "L04": {
+            "R1": "/home/Genomics/V300102849_L04_86_1.fq.gz",
+            "R2": "/home/Genomics/V300102849_L04_86_2.fq.gz"
+        }
+    }
+}
+								 
 Cretae by Tianyng W	2023/11/28
-Bug report:https://github.com/heihaheihaha/Call_variants_V1.0.0/issues
+Bug report:https://github.com/heihaheihaha/WES_trio_snakemake/issues
 ======================================================================''', formatter_class=RawTextHelpFormatter)
 parser.add_argument('--directory', '-d', required=True, help='The directory containing the fastq files')
-parser.add_argument('--output', '-o', required=False, help='The Path of output JSON file, default: All_sample.json')
+parser.add_argument('--output', '-o', required=False, help='The Path of output JSON file, default: All_sample.json', 
+					default='All_sample.json')
 
 args = parser.parse_args()
 
-
-import os
-import json
-
 def extract_details(filename):
-    """
-    Extracts sample name, lane, and read number from a given fastq file name.
-    Example: 'V300102848_L03_86_1.fq.gz' -> ('V300102848', 'L03', '1')
-    """
-    parts = filename.split('_')
-    sample_name = parts[0]
-    lane = parts[1]
-    read = filename.split('_')[-1].split('.')[0]
-    return sample_name, lane, read
+	"""
+	Extracts sample name, lane, and read number from a given fastq file name.
+	Example: 'V300102848_L03_86_1.fq.gz' -> ('V300102848', 'L03', '1')
+	"""
+	parts = filename.split('_')
+	sample_name = parts[0]
+	lane = parts[1]
+	read = filename.split('_')[-1].split('.')[0]
+	return sample_name, lane, read
 
 def process_directory(directory):
-    """
-    Traverses the directory and organizes fastq files into a JSON structure grouped by sample names.
-    """
-    samples = {}
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.fq.gz') or file.endswith('.fastq.gz'):
-                sample_name, lane, read = extract_details(file)
-                if sample_name not in samples:
-                    samples[sample_name] = {}
-                if lane not in samples[sample_name]:
-                    samples[sample_name][lane] = {'R1': '', 'R2': ''}
-                read_key = 'R1' if read == '1' else 'R2'
-                samples[sample_name][lane][read_key] = os.path.join(root, file)
-    return samples
+	"""
+	Traverses the directory and organizes fastq files into a JSON structure grouped by sample names.
+	"""
+	samples = {}
+	for root, dirs, files in os.walk(directory):
+		for file in files:
+			if (file.endswith('.fq.gz') or file.endswith('.fastq.gz')) and not file.startswith('.'):
+				sample_name, lane, read = extract_details(file)
+				if sample_name not in samples:
+					samples[sample_name] = {}
+				if lane not in samples[sample_name]:
+					samples[sample_name][lane] = {'R1': '', 'R2': ''}
+				read_key = 'R1' if read == '1' else 'R2'
+				samples[sample_name][lane][read_key] = os.path.join(root, file)
+	return samples
 
 if __name__ == '__main__':
 

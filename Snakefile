@@ -6,7 +6,27 @@ import json
 configfile: "config.yaml"
 gatk = config["gatk_path"]
 ref_path0 = config["reference_panel_path"]
+
+# Sample JOSN file
+# 
+def get_Sample_json_path() -> str:
+	snakefile_dir = os.path.dirname(snakefile)
+	return os.path.join(snakefile_dir, 'All_sample.json')
+if os.path.exists(get_Sample_json_path()):
+	with open(get_Sample_json_path(), 'r') as f:
+		Sample_info = json.load(f)
+	if not Sample_json:	# When All_sample.json file is empty
+		print("The All_sample.json file is empty, pipeline will use path in config.yaml file")
+
+else: # When All_sample.json file is not exist
+	print("Can't find the All_sample.json file, pipeline will use path in config.yaml file")
+
+	
+
 def fa_dict(path0: str) -> str:
+'''
+Get the path of the reference panel's dict file
+'''
 	dir_path = os.path.dirname(path0)
 	file_name = os.path.splitext(os.path.basename(path0))[0]
 	output_file = os.path.join(dir_path, file_name + ".dict")
@@ -28,6 +48,10 @@ else:
 
 # Get the name of known sites files's index's name
 def test_gz(input_file_path):
+'''
+Get the name of known sites files's index's name
+Different file types have different index's name
+'''
 	if input_file_path.endswith(".gz"):
 		return input_file_path + ".tbi"
 	else:
@@ -48,7 +72,8 @@ rule end:
 		f"{config['output_dir']}/alignments/{config['CHILD_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['FU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf",
 		f"{config['output_dir']}/alignments/{config['MU0_sample_name']}.bwa.markdup.rg.bqsr.bam.table.pdf"
-
+	shell:
+		f"""echo "The pipeline is finished!" """
 # ====================== fastp ======================
 rule FU0_fastp:
 	input:
