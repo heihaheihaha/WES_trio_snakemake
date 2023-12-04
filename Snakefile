@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import json
 
 configfile: "config.yaml"
 gatk = config["gatk_path"]
@@ -1091,3 +1092,23 @@ rule fasta_faidx:
 	# samtools faidx will create the index file for the fasta file
 
 #==============================================================================================================
+
+
+### TMP!
+# rule bam_statis:
+#     input:
+#         rules.ApplyBQSR.output
+#     params:
+#         BAMST_outdir= "{outdir}/04.Bamsts/{sample_d}".format(outdir=OUT_DIR,sample_d='{sample}')
+#     output:
+#         "{outdir}/04.Bamsts/{sample_d}/chromosomes.report".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/coverage.report".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/depth_distribution.plot".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/depth.tsv.gz".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/insertsize.plot".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/region.tsv.gz".format(outdir=OUT_DIR,sample_d='{sample}'),
+#         "{outdir}/04.Bamsts/{sample_d}/uncover.bed".format(outdir=OUT_DIR,sample_d='{sample}')
+#     log:
+#         "{outdir}/log/bamstat_{sample}_index.log".format(outdir=OUT_DIR,sample='{sample}')
+#     shell:
+#         "{BAMST} -p {GENE_BED} -o {params.BAMST_outdir}"  # ori -O error!; -O {output} errot !
